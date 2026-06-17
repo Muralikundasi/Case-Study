@@ -25,6 +25,8 @@
   --green:     #4caf7d;
   --green-bg:  rgba(76,175,125,0.12);
   --red:       #e05252;
+  --meta:      #8b7cf6;
+  --meta-bg:   rgba(139,124,246,0.14);
 
   --rail-w:    52px;
   --t2-w:      240px;
@@ -1375,6 +1377,99 @@ body {
 .instr-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .instr-modal-actions .usage-nudge-btn { padding: 8px 16px; font-size: 12.5px; }
 
+/* ── Orientation overlay (for cold-open viewers) ── */
+.intro-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(3px);
+  z-index: 400;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.15s;
+}
+.intro-overlay.open { opacity: 1; pointer-events: all; }
+.intro-card {
+  width: 560px; max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 12px; box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  padding: 28px 30px 22px;
+  transform: translateY(-8px);
+  transition: transform 0.15s;
+}
+.intro-overlay.open .intro-card { transform: translateY(0); }
+.intro-title { font-size: 19px; font-weight: 600; color: var(--t1); margin-bottom: 6px; }
+.intro-thesis { font-size: 13.5px; color: var(--accent); font-weight: 500; line-height: 1.5; margin-bottom: 4px; }
+.intro-section-label { font-size: 11px; font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: 0.04em; margin: 18px 0 8px; }
+.intro-tier { display: flex; gap: 10px; margin-bottom: 10px; }
+.intro-tier-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent-bg); color: var(--accent);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.intro-tier-body { font-size: 12.5px; color: var(--t2); line-height: 1.5; }
+.intro-tier-body strong { color: var(--t1); }
+.intro-steps { list-style: none; padding: 0; margin: 0; }
+.intro-steps li { display: flex; gap: 10px; align-items: center; font-size: 12.5px; color: var(--t2); line-height: 1.5; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.intro-steps li:last-child { border-bottom: none; }
+.intro-step-num {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--surface); color: var(--t3);
+  font-size: 10.5px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.intro-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+
+.intro-help-btn, .anno-toggle-btn {
+  position: fixed; right: 16px; z-index: 250;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--meta-bg); border: 1.5px solid var(--meta);
+  color: var(--meta); font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: opacity 0.15s;
+  box-shadow: 0 2px 10px rgba(139,124,246,0.25);
+}
+.intro-help-btn:hover, .anno-toggle-btn:hover { opacity: 0.8; }
+.intro-help-btn { top: 54px; }
+.anno-toggle-btn { top: 90px; font-size: 10px; }
+.anno-toggle-btn.active { background: var(--meta); color: #1a1916; }
+
+/* ── Inline annotation pins (toggled via the ① button) — deliberately
+   styled in --meta (violet), a color used nowhere else in the product,
+   so a viewer can tell at a glance these labels are not part of the UI ── */
+.anno-pin {
+  display: none;
+  position: relative;
+  align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 600;
+  color: var(--meta);
+  background: var(--meta-bg);
+  border: 1px dashed var(--meta);
+  border-radius: 10px;
+  padding: 2px 7px;
+  margin: 4px 0;
+  white-space: nowrap;
+  width: fit-content;
+  cursor: default;
+}
+body.show-annotations .anno-pin { display: inline-flex; }
+.anno-pin-num { font-weight: 700; }
+.anno-pin[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 0; top: calc(100% + 6px);
+  background: var(--surface); color: var(--t1);
+  font-size: 11px; font-weight: 500;
+  padding: 5px 9px; border-radius: 6px;
+  border: 1px solid var(--meta);
+  white-space: nowrap; z-index: 260;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
 /* ── SETTINGS POINTER HINT (Customize/Settings split) ── */
 .t2-settings-hint {
   margin: 14px 12px;
@@ -1408,7 +1503,7 @@ body {
   .desktop-only { display: none !important; }
   .t2 {
     position: fixed;
-    top: 0; bottom: 56px; left: 0;
+    top: 0; bottom: 0; left: 0;
     width: 82vw; max-width: 320px;
     z-index: 100;
     transform: translateX(-100%);
@@ -1420,9 +1515,8 @@ body {
   .t2-inner { width: 100%; }
   .t2-expand-btn { display: none !important; }
 
-  /* Tier 3 takes the whole viewport, minus the bottom bar */
+  /* Tier 3 takes the whole viewport — no bottom tab bar to clear */
   body { flex-direction: column; }
-  .t3 { padding-bottom: 56px; }
   .t3-topbar { padding: 0 12px; gap: 8px; }
 
   /* A top bar gets a hamburger to summon Tier 2 */
@@ -1435,60 +1529,31 @@ body {
   .m-menu-btn:active { background: var(--surface); }
   .m-menu-btn svg { width: 18px; height: 18px; }
 
-  /* ── TIER 1 as a bottom tab bar ── */
-  .m-tabbar {
+  /* Profile/Settings avatar, surfaced on mobile since there's no Tier 1 rail */
+  .m-avatar-btn {
     display: flex;
-    position: fixed; left: 0; right: 0; bottom: 0;
-    height: 56px;
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    z-index: 95;
-    padding: 0 4px;
-    align-items: stretch;
+    margin-top: 0;
   }
-  .m-tab {
-    flex: 1;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 3px;
-    color: var(--t3); cursor: pointer;
-    font-size: 10px;
-    transition: color 0.15s;
-    position: relative;
-  }
-  .m-tab svg { width: 20px; height: 20px; }
-  .m-tab.active { color: var(--accent); }
-  .m-tab.more { color: var(--t3); }
+  .m-avatar-btn::after { display: none; }
 
-  /* Overflow sheet for "More" products (Tier 1 scaling) */
-  .m-more-sheet {
-    position: fixed; left: 0; right: 0; bottom: 56px;
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    border-radius: 14px 14px 0 0;
-    z-index: 96;
-    padding: 14px 14px 18px;
-    transform: translateY(110%);
-    transition: transform 0.24s cubic-bezier(0.4,0,0.2,1);
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.4);
+  /* ── Vertical product switcher pinned to the top of the Tier 2 drawer ── */
+  .t2-mobile-switch {
+    display: flex; flex-direction: column;
+    flex-shrink: 0;
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
   }
-  .m-more-sheet.open { transform: translateY(0); }
-  .m-more-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 8px;
-    margin-top: 6px;
-  }
-  .m-more-item {
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    color: var(--t2); cursor: pointer; font-size: 11px;
-  }
-  .m-more-item .m-more-ico {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: var(--surface); border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
+  .t2-mobile-switch-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
     color: var(--t2);
+    font-size: 13px;
+    cursor: pointer;
   }
-  .m-more-item .m-more-ico svg { width: 19px; height: 19px; }
-  .m-more-item.active .m-more-ico { background: var(--accent-bg); border-color: rgba(212,169,106,0.4); color: var(--accent); }
-  .m-more-title { font-size: 12px; font-weight: 600; color: var(--t1); margin-bottom: 2px; }
+  .t2-mobile-switch-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+  .t2-mobile-switch-item:hover { background: var(--surface); color: var(--t1); }
+  .t2-mobile-switch-item.active { background: var(--surface); color: var(--t1); font-weight: 500; }
 
   /* Chat bubbles widen on mobile */
   .chat-msg { padding: 10px 16px; }
@@ -1506,11 +1571,44 @@ body {
 }
 
 @media (min-width: 761px) {
-  .m-tabbar, .m-more-sheet, .m-menu-btn { display: none !important; }
+  .m-menu-btn, .m-avatar-btn, .t2-mobile-switch { display: none !important; }
 }
 </style>
 </head>
 <body>
+
+<!-- ══════════════════════════════════════
+     ORIENTATION OVERLAY (for a viewer opening this cold, with no narration)
+══════════════════════════════════════ -->
+<div class="intro-overlay open" id="intro-overlay">
+  <div class="intro-card">
+    <div class="intro-title">What this prototype is</div>
+    <div class="intro-thesis">Claude is the enginer; Chat, Cowork, and Code are surfaces that share one foundation.</div>
+
+    <div class="intro-section-label">The 3-tier IA</div>
+    <div class="intro-tier"><span class="intro-tier-num">1</span><div class="intro-tier-body"><strong>Tier 1 — the Anchor.</strong> Which surface you're in: Chat, Cowork, or Code.</div></div>
+    <div class="intro-tier"><span class="intro-tier-num">2</span><div class="intro-tier-body"><strong>Tier 2 — the sidebar.</strong> Context for that surface: chats, projects, settings.</div></div>
+    <div class="intro-tier"><span class="intro-tier-num">3</span><div class="intro-tier-body"><strong>Tier 3 — the working pane.</strong> What you're actually doing right now.</div></div>
+
+    <div class="intro-section-label">Also live in this Foundation</div>
+    <div class="intro-tier-body">Two more bets are wired in here and will surface as you use it: a <strong>usage indicator</strong> near the chat input, and a <strong>project suggestion</strong> that appears in the sidebar once a few chats look related.</div>
+
+    <div class="intro-section-label">Things to try</div>
+    <ul class="intro-steps">
+      <li><span class="intro-step-num">1</span> Switch surfaces in the left — Chat → Cowork → Code</li>
+      <li><span class="intro-step-num">2</span> Open <strong>Projects</strong> in the Chat sidebar</li>
+      <li><span class="intro-step-num">3</span> Open a chat and look at the usage ring next to the input</li>
+      <li><span class="intro-step-num">4</span> Watch the sidebar — a project suggestion appears after a moment</li>
+      <li><span class="intro-step-num">5</span> Try the search icon to look across surfaces</li>
+    </ul>
+
+    <div class="intro-actions">
+      <button class="usage-nudge-btn primary" onclick="closeIntro()">Start exploring</button>
+    </div>
+  </div>
+</div>
+<div class="intro-help-btn" onclick="openIntro()" title="What is this?">?</div>
+<div class="anno-toggle-btn" id="anno-toggle-btn" onclick="toggleAnnotations()" title="Toggle on-screen labels">①</div>
 
 <!-- ══════════════════════════════════════
      TIER 1 — PRODUCT RAIL
@@ -1530,6 +1628,7 @@ body {
       <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
     </svg>
   </div>
+  <div class="anno-pin" data-tip="Pick the surface: Chat, Cowork, or Code"><span class="anno-pin-num">①</span> Tier 1</div>
 
   <div class="t1-btn active" data-tip="Chat" onclick="switchT1('chat')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -1571,8 +1670,8 @@ body {
 <!-- Profile popover menu -->
 <div class="profile-popover" id="profile-popover">
   <div class="popover-user">
-    <div class="popover-user-name">Murali</div>
-    <div class="popover-user-plan">Pro plan · murali@example.com</div>
+    <div class="popover-user-name">Mark</div>
+    <div class="popover-user-plan">Pro plan · mark@example.com</div>
   </div>
   <div class="popover-group">
     <div class="popover-item" onclick="popoverNav('settings')">
@@ -1639,10 +1738,22 @@ body {
 <div class="t2" id="t2">
   <div class="t2-inner">
 
+    <!-- Mobile-only vertical product switcher (replaces the desktop Tier 1 rail) -->
+    <div class="t2-mobile-switch">
+      <div class="t2-mobile-switch-item active" id="msw-chat" onclick="mobileSwitch('chat')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Chats
+      </div>
+      <div class="t2-mobile-switch-item" id="msw-code" onclick="mobileSwitch('code')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Code
+      </div>
+    </div>
+
     <!-- ── CHAT panel ── -->
     <div class="t2-panel active" id="t2-chat">
       <div class="t2-header">
-        <span class="t2-title">Chat</span>
+        <span class="t2-title" style="display:flex;align-items:center;gap:8px;">Chat<span class="anno-pin" data-tip="Context for the current surface"><span class="anno-pin-num">②</span> Tier 2</span></span>
         <div class="t2-collapse-btn" onclick="collapseT2()" title="Collapse sidebar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
         </div>
@@ -1675,7 +1786,6 @@ body {
           <span>Recents</span>
           <span class="t2-viewall" onclick="showAllChats()">View all →</span>
         </div>
-        <div class="t2-chat-item active" onclick="openChat('3-tier navigation redesign')">3-tier navigation redesign</div>
         <div class="t2-chat-item" onclick="openChat('Brainstorming session notes')">Brainstorming session notes</div>
         <div class="t2-chat-item" onclick="openChat('Thinking through a career decision')">Thinking through a career decision</div>
         <div class="t2-chat-item" onclick="openChat('Comparing cloud storage options')">Comparing cloud storage options</div>
@@ -1694,6 +1804,7 @@ body {
       </div>
 
       <!-- ── SMART SUGGESTION (big bet) — pinned to bottom of Tier 2, queued ── -->
+      <div class="anno-pin" data-tip="Appears once related chats cluster" style="margin:0 14px 4px;"><span class="anno-pin-num">④</span> Project suggestion</div>
       <div class="proj-suggest" id="proj-suggest"></div>
     </div>
 
@@ -1804,7 +1915,7 @@ body {
         <div class="t2-label">Browse by category</div>
         <div class="t2-nav-item" onclick="switchCustomizePage('cat-productmgmt', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          Product management
+          Teaching
         </div>
         <div class="t2-nav-item" onclick="switchCustomizePage('cat-productivity', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -1860,7 +1971,7 @@ body {
       <div class="t2-nav-item" onclick="switchT1('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"/></svg>Settings →</div>
       <div style="margin-top:auto; padding: 14px;">
         <div style="font-size:11px; color:var(--t3); margin-bottom:8px;">Signed in as</div>
-        <div style="font-size:13px; color:var(--t1); font-weight:500;">Murali</div>
+        <div style="font-size:13px; color:var(--t1); font-weight:500;">Mark</div>
         <div style="font-size:11px; color:var(--t3); margin-bottom:12px;">Pro plan</div>
         <div style="font-size:12px; color:var(--red); cursor:pointer; padding: 6px 0;">Sign out</div>
       </div>
@@ -1887,7 +1998,7 @@ body {
     <div class="t3-breadcrumb" id="breadcrumb">
       <span class="crumb" onclick="switchT1('chat')">Chat</span>
       <span class="sep">›</span>
-      <span class="crumb current" id="bc-current">3-tier navigation redesign</span>
+      <span class="crumb current" id="bc-current">New chat</span>
     </div>
     <div class="t3-spacer"></div>
     <div class="t3-topbar-actions">
@@ -1897,6 +2008,7 @@ body {
       <div class="t3-icon-btn" title="Share">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </div>
+      <div class="t1-avatar m-avatar-btn" id="profile-avatar-mobile" onclick="openProfileMenu(event)" title="Settings">M</div>
     </div>
   </div>
 
@@ -1905,7 +2017,7 @@ body {
     <div class="empty-chat-wrap">
       <div class="empty-chat-greeting">
         <svg viewBox="0 0 24 24" fill="currentColor" class="empty-chat-star"><circle cx="12" cy="12" r="2.2"/><line x1="12" y1="2" x2="12" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="2" y1="12" x2="6" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="18" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        Back at it, Murali
+        Back at it, Mark
       </div>
       <div class="chat-input-box empty-chat-input">
         <textarea rows="1" placeholder="Try: draft an email · summarize a doc · plan your week" onInput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
@@ -2071,6 +2183,7 @@ body {
             </span>
 
             <!-- ── USAGE INDICATOR (small bet) — the Claude Code pattern: ring icon → popover → arrow to Settings ── -->
+            <span class="anno-pin" data-tip="Shows plan usage limits"><span class="anno-pin-num">③</span> Usage</span>
             <span class="usage-ring desktop-only" id="usage-ring" onclick="toggleUsagePop(event)" title="Usage">
               <svg viewBox="0 0 36 36">
                 <circle class="ring-bg" cx="18" cy="18" r="15"></circle>
@@ -2151,8 +2264,8 @@ body {
           <div class="s-section-title">Profile</div>
           <div class="s-card">
             <div class="s-row"><div><div class="s-row-label">Avatar</div></div><div class="s-row-ctrl"><div class="s-avatar">M</div></div></div>
-            <div class="s-row"><div class="s-row-label">Full name</div><div class="s-row-ctrl"><input class="s-input" value="Murali"></div></div>
-            <div class="s-row"><div class="s-row-label">What should Claude call you?</div><div class="s-row-ctrl"><input class="s-input" value="Murali"></div></div>
+            <div class="s-row"><div class="s-row-label">Full name</div><div class="s-row-ctrl"><input class="s-input" value="Mark"></div></div>
+            <div class="s-row"><div class="s-row-label">What should Claude call you?</div><div class="s-row-ctrl"><input class="s-input" value="Mark"></div></div>
             <div class="s-row"><div class="s-row-label">Work description</div><div class="s-row-ctrl"><select class="s-select"><option selected>Product management</option><option>Engineering</option><option>Design</option></select></div></div>
           </div>
         </div>
@@ -2162,11 +2275,7 @@ body {
             <div class="s-col">
               <span class="s-row-label">Custom instructions</span>
               <div class="s-row-desc" style="margin-bottom:8px;">Claude keeps these in mind across all chats.</div>
-              <textarea class="s-textarea">I am an experienced product manager searching for new job. I also have 10+ years in core product management in B2B SaaS, mobile apps and consumer apps. I worked for companies such as Mural, SIM partners acquired by reputation.com and Taxfix.
-
-Break down the problems and clarify each ask and then give me the plan before you execute.
-Ask before you search web or do actions.
-Use artifacts only for web apps and code demos.</textarea>
+              <textarea class="s-textarea">I am Jordon and a teacher who teaches montessari kids</textarea>
             </div>
           </div>
         </div>
@@ -2193,7 +2302,7 @@ Use artifacts only for web apps and code demos.</textarea>
       <div class="settings-page" id="sp-account">
         <div class="settings-page-title">Account</div>
         <div class="s-section"><div class="s-section-title">Account details</div><div class="s-card">
-          <div class="s-row"><div class="s-row-label">Email</div><div style="color:var(--t3);font-size:13px;">murali@example.com</div></div>
+          <div class="s-row"><div class="s-row-label">Email</div><div style="color:var(--t3);font-size:13px;">mark@example.com</div></div>
           <div class="s-row"><div class="s-row-label">Plan</div><div class="s-row-ctrl"><span class="s-badge accent">Pro</span></div></div>
           <div class="s-row"><div class="s-row-label">Member since</div><div style="color:var(--t3);font-size:13px;">January 2024</div></div>
         </div></div>
@@ -2293,9 +2402,9 @@ Use artifacts only for web apps and code demos.</textarea>
       <div class="settings-page" id="sp-connectors">
         <div class="settings-page-title">Connectors</div>
         <div class="s-section"><div class="s-section-title">Connected</div><div class="s-card">
-          <div class="s-connector-row"><div class="s-connector-icon">📅</div><div><div class="s-connector-name">Google Calendar</div><div class="s-connector-status">murali@gmail.com</div></div><button class="s-connect-btn on">Connected</button></div>
-          <div class="s-connector-row"><div class="s-connector-icon">📧</div><div><div class="s-connector-name">Gmail</div><div class="s-connector-status">murali@gmail.com</div></div><button class="s-connect-btn on">Connected</button></div>
-          <div class="s-connector-row"><div class="s-connector-icon">📁</div><div><div class="s-connector-name">Google Drive</div><div class="s-connector-status">murali@gmail.com</div></div><button class="s-connect-btn on">Connected</button></div>
+          <div class="s-connector-row"><div class="s-connector-icon">📅</div><div><div class="s-connector-name">Google Calendar</div><div class="s-connector-status">mark@example.com</div></div><button class="s-connect-btn on">Connected</button></div>
+          <div class="s-connector-row"><div class="s-connector-icon">📧</div><div><div class="s-connector-name">Gmail</div><div class="s-connector-status">mark@example.com</div></div><button class="s-connect-btn on">Connected</button></div>
+          <div class="s-connector-row"><div class="s-connector-icon">📁</div><div><div class="s-connector-name">Google Drive</div><div class="s-connector-status">mark@example.com</div></div><button class="s-connect-btn on">Connected</button></div>
           <div class="s-connector-row"><div class="s-connector-icon">💬</div><div><div class="s-connector-name">Slack</div><div class="s-connector-status">Mural workspace</div></div><button class="s-connect-btn on">Connected</button></div>
         </div></div>
         <div class="s-section"><div class="s-section-title">Available</div><div class="s-card">
@@ -2635,40 +2744,9 @@ Use artifacts only for web apps and code demos.</textarea>
 </div>
 
 <!-- ══════════════════════════════════════
-     MOBILE — drawer scrim + Tier 1 bottom tabs
+     MOBILE — drawer scrim
 ══════════════════════════════════════ -->
 <div class="scrim" id="drawer-scrim" onclick="closeDrawer()"></div>
-<div class="scrim" id="more-scrim" onclick="closeMore()" style="z-index:94;"></div>
-
-<!-- Tier 1 → bottom tab bar (Cowork is desktop-only, omitted here) -->
-<div class="m-tabbar mobile-only">
-  <div class="m-tab active" id="mtab-chat" onclick="mobileSwitch('chat')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    Chat
-  </div>
-  <div class="m-tab" id="mtab-code" onclick="mobileSwitch('code')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-    Code
-  </div>
-  <div class="m-tab more" onclick="openMore()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
-    More
-  </div>
-</div>
-
-<!-- Tier 1 overflow — scales to N products -->
-<div class="m-more-sheet" id="more-sheet">
-  <div class="m-more-title">Claude family</div>
-  <div class="m-more-grid">
-    <div class="m-more-item active" onclick="mobileSwitch('chat'); closeMore();"><div class="m-more-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>Chat</div>
-    <div class="m-more-item" onclick="mobileSwitch('code'); closeMore();"><div class="m-more-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>Code</div>
-    <div class="m-more-item" onclick="closeMore();"><div class="m-more-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></div>Design</div>
-    <div class="m-more-item" onclick="closeMore();"><div class="m-more-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/></svg></div>Chrome</div>
-    <div class="m-more-item" onclick="closeMore();"><div class="m-more-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></div>Excel</div>
-    <div class="m-more-item" onclick="mobileSwitch('customize'); closeMore();"><div class="m-more-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="9" height="9" rx="1"/><rect x="13" y="3" width="9" height="9" rx="1"/><rect x="2" y="13" width="9" height="9" rx="1"/><path d="M13 17.5h9M17.5 13v9"/></svg></div>Customize</div>
-    <div class="m-more-item" onclick="mobileSwitch('settings'); closeMore();"><div class="m-more-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"/></svg></div>Settings</div>
-  </div>
-</div>
 
 <script>
 // ── STATE ──
@@ -3099,19 +3177,36 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     const overlay = document.getElementById('search-overlay');
     if (overlay.classList.contains('open')) closeSearch();
-    closeDrawer(); closeMore(); closeAllInputMenus();
+    closeIntro();
+    closeDrawer(); closeAllInputMenus();
   }
 });
 
 // ══════════════════════════════════════
-// MOBILE — drawer + bottom tabs + overflow
+// ORIENTATION OVERLAY + ANNOTATION PINS
+// ══════════════════════════════════════
+function openIntro() { document.getElementById('intro-overlay').classList.add('open'); }
+function closeIntro() {
+  document.getElementById('intro-overlay').classList.remove('open');
+  // Dismissing the overlay is the cue that a cold-open viewer needs the
+  // on-screen labels, so turn them on rather than making that a second step.
+  document.body.classList.add('show-annotations');
+  document.getElementById('anno-toggle-btn').classList.add('active');
+}
+function toggleAnnotations() {
+  document.body.classList.toggle('show-annotations');
+  document.getElementById('anno-toggle-btn').classList.toggle('active');
+}
+
+// ══════════════════════════════════════
+// MOBILE — vertical drawer + product switcher
 // ══════════════════════════════════════
 function mobileSwitch(mode) {
   switchT1(mode);
-  // Sync bottom-tab active state (chat/cowork/code; others fall through)
-  document.querySelectorAll('.m-tab').forEach(t => t.classList.remove('active'));
-  const tab = document.getElementById('mtab-' + mode);
-  if (tab) tab.classList.add('active');
+  // Sync the drawer's vertical switcher active state (chat/code)
+  document.querySelectorAll('.t2-mobile-switch-item').forEach(t => t.classList.remove('active'));
+  const item = document.getElementById('msw-' + mode);
+  if (item) item.classList.add('active');
   // On mobile, switching a product should reveal Tier 3 (close the drawer)
   closeDrawer();
 }
@@ -3123,14 +3218,6 @@ function openDrawer() {
 function closeDrawer() {
   document.getElementById('t2').classList.remove('drawer-open');
   document.getElementById('drawer-scrim').classList.remove('open');
-}
-function openMore() {
-  document.getElementById('more-sheet').classList.add('open');
-  document.getElementById('more-scrim').classList.add('open');
-}
-function closeMore() {
-  document.getElementById('more-sheet').classList.remove('open');
-  document.getElementById('more-scrim').classList.remove('open');
 }
 
 // On mobile, tapping a chat/project inside the drawer should close it to show Tier 3.
