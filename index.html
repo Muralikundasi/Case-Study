@@ -271,18 +271,7 @@ body {
 }
 .t2-chat-item:hover { background: var(--surface); color: var(--t1); }
 .t2-chat-item.active { background: var(--surface); color: var(--t1); }
-.t2-chat-item.running { background: var(--surface); color: var(--t1); font-weight: 500; }
-.t2-chat-item.running::before {
-  content: '';
-  display: inline-block;
-  width: 6px; height: 6px;
-  margin-right: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-  vertical-align: middle;
-  animation: t2-running-blink 1.1s ease-in-out infinite;
-}
-@keyframes t2-running-blink {
+@keyframes t2-suggestion-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.2; }
 }
@@ -1002,6 +991,7 @@ body {
   color: var(--t2);
 }
 .cust-card-icon svg { width: 16px; height: 16px; }
+.cust-card-kicker { font-size: 10.5px; font-weight: 600; color: var(--t3); margin-bottom: 2px; }
 .cust-card-title { font-size: 13px; font-weight: 500; color: var(--t1); margin-bottom: 2px; }
 .cust-card-desc { font-size: 12px; color: var(--t3); line-height: 1.4; }
 
@@ -1054,6 +1044,17 @@ body {
 }
 .cust-plugin-status.enabled { background: var(--green-bg); color: var(--green); }
 .cust-plugin-status.disabled { background: var(--surface); color: var(--t3); border: 1px solid var(--border); }
+
+.cust-memory-box {
+  display: flex; align-items: center; gap: 14px;
+  margin: 8px 32px 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.cust-memory-box:hover { background: var(--bg3); }
 
 .cust-add-btn {
   padding: 5px 14px;
@@ -1349,7 +1350,7 @@ body {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--accent);
   margin-left: auto;
-  animation: t2-running-blink 1.1s ease-in-out infinite;
+  animation: t2-suggestion-blink 1.1s ease-in-out infinite;
 }
 /* Only show the nav-item's annotation pin while the blink is actually active */
 .t2-nav-item .anno-pin { display: none; }
@@ -1449,6 +1450,280 @@ body.show-annotations .t2-nav-item.has-suggestion .anno-pin { display: inline-fl
 }
 .intro-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
 
+/* ── Onboarding checklist + desktop download overlay ── */
+.onboard-checklist {
+  flex-shrink: 0;
+  margin: 10px 12px 12px;
+  padding: 10px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.16);
+}
+.onboard-checklist-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.onboard-checklist-title { font-size: 11.5px; font-weight: 600; color: var(--t1); }
+.onboard-checklist-count { font-size: 10.5px; color: var(--t3); }
+.onboard-progress { height: 4px; background: var(--surface); border-radius: 999px; overflow: hidden; margin-bottom: 8px; }
+.onboard-progress-fill { height: 100%; width: 0%; background: var(--accent); border-radius: inherit; }
+.onboard-item {
+  display: flex; gap: 8px;
+  padding: 7px 2px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.onboard-item:hover { background: var(--surface); }
+.onboard-item.done { opacity: 0.55; pointer-events: none; }
+.onboard-dot {
+  width: 11px; height: 11px;
+  border: 1px solid var(--border2);
+  border-radius: 50%;
+  flex-shrink: 0; margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+}
+.onboard-item.done .onboard-dot {
+  background: var(--green);
+  border-color: var(--green);
+}
+.onboard-item.done .onboard-dot::after {
+  content: '';
+  width: 5px; height: 3px;
+  border-left: 1.5px solid #fff;
+  border-bottom: 1.5px solid #fff;
+  transform: rotate(-45deg) translateY(-1px);
+  display: block;
+}
+.onboard-item-title { font-size: 11.5px; color: var(--t1); line-height: 1.25; font-weight: 500; }
+.onboard-item-desc { font-size: 10.5px; color: var(--t3); line-height: 1.35; margin-top: 2px; }
+
+/* Simple download confirm modal */
+.dl-confirm-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.52);
+  backdrop-filter: blur(3px);
+  z-index: 430;
+  display: none; align-items: center; justify-content: center;
+}
+.dl-confirm-overlay.open { display: flex; }
+.dl-confirm-modal {
+  width: 380px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  padding: 28px 28px 24px;
+}
+.dl-confirm-title { font-size: 16px; font-weight: 650; color: var(--t1); margin-bottom: 8px; }
+.dl-confirm-sub { font-size: 13px; color: var(--t2); line-height: 1.45; margin-bottom: 22px; }
+.dl-confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.dl-confirm-actions button { padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; border: 1px solid var(--border2); }
+.dl-confirm-cancel { background: transparent; color: var(--t2); }
+.dl-confirm-download { background: var(--accent); color: #1a1916; border-color: var(--accent) !important; font-weight: 600; }
+
+/* ── Import memory modal ── */
+.import-mem-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.58);
+  backdrop-filter: blur(4px);
+  z-index: 440;
+  display: none; align-items: center; justify-content: center;
+}
+.import-mem-overlay.open { display: flex; }
+.import-mem-modal {
+  width: 520px;
+  background: #1e1c1a;
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  box-shadow: 0 28px 70px rgba(0,0,0,0.55);
+  padding: 28px 28px 24px;
+  position: relative;
+}
+.import-mem-title {
+  font-size: 19px; font-weight: 650; color: var(--t1);
+  margin-bottom: 22px; padding-right: 36px;
+}
+.import-mem-close {
+  position: absolute; top: 20px; right: 20px;
+  width: 32px; height: 32px;
+  border: 1.5px solid #2f6fe4;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t2); cursor: pointer;
+  font-size: 20px; line-height: 1;
+}
+.import-mem-close:hover { background: var(--surface); }
+.import-mem-step { margin-bottom: 18px; }
+.import-mem-step-label {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+.import-mem-num {
+  width: 22px; height: 22px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: var(--t2);
+  flex-shrink: 0;
+}
+.import-mem-step-title { font-size: 14px; font-weight: 600; color: var(--t1); }
+.import-mem-prompt-box {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  padding: 14px 14px 38px;
+  position: relative;
+  font-size: 13px; color: var(--t2); line-height: 1.55;
+}
+.import-mem-copy-btn {
+  position: absolute; bottom: 10px; right: 10px;
+  display: flex; align-items: center; gap: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px; color: var(--t2); cursor: pointer;
+}
+.import-mem-copy-btn:hover { color: var(--t1); }
+.import-mem-copy-btn svg { width: 13px; height: 13px; }
+.import-mem-textarea {
+  width: 100%; min-height: 100px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 9px;
+  padding: 12px 14px;
+  font-size: 13px; color: var(--t2);
+  font-family: inherit; resize: vertical;
+  line-height: 1.5;
+}
+.import-mem-textarea:focus { outline: none; border-color: var(--border); }
+.import-mem-textarea::placeholder { color: var(--t3); }
+.import-mem-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.import-mem-cancel {
+  background: transparent; color: var(--t2);
+  border: 1px solid var(--border2); border-radius: 8px;
+  padding: 8px 18px; font-size: 13px; cursor: pointer;
+}
+.import-mem-cancel:hover { color: var(--t1); }
+.import-mem-submit {
+  background: var(--t1); color: #1a1916;
+  border: none; border-radius: 8px;
+  padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.import-mem-submit:hover { opacity: 0.88; }
+
+/* Auto-generate in instructions */
+.pd-side-autogen {
+  font-size: 11px; color: var(--accent);
+  cursor: pointer; margin-left: auto;
+  padding: 1px 6px; border-radius: 5px;
+}
+.pd-side-autogen:hover { background: var(--accent-bg); }
+.pd-autogen-loading { font-size: 11.5px; color: var(--t3); font-style: italic; padding: 4px 0; }
+
+/* Start a task in Cowork button */
+.pd-cowork-cta {
+  display: flex; justify-content: center; margin: 4px 0 20px;
+}
+.pd-cowork-btn {
+  font-size: 13px; color: var(--t2);
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.pd-cowork-btn:hover { background: var(--surface); color: var(--t1); border-color: var(--border); }
+.pd-cowork-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.app-download-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.52);
+  backdrop-filter: blur(3px);
+  z-index: 420;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.app-download-overlay.open { display: flex; }
+.app-download-modal {
+  width: min(1020px, calc(100vw - 56px));
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  box-shadow: 0 28px 70px rgba(0,0,0,0.45);
+  padding: 28px 30px 34px;
+  position: relative;
+}
+.app-download-close {
+  position: absolute; top: 20px; right: 20px;
+  width: 32px; height: 32px;
+  border: 1.5px solid #2f6fe4;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t2); cursor: pointer;
+  font-size: 22px; line-height: 1;
+}
+.app-download-title { font-size: 20px; font-weight: 650; color: var(--t1); margin-bottom: 10px; }
+.app-download-sub { font-size: 14px; color: var(--t2); margin-bottom: 44px; }
+.app-download-sub span { text-decoration: underline; cursor: pointer; }
+.app-download-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.app-step-visual {
+  height: 205px;
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--bg3), var(--bg2));
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.app-step-label { font-size: 12px; color: var(--t3); margin: 18px 8px 10px; }
+.app-step-title { font-size: 20px; color: var(--t1); font-weight: 650; margin: 0 8px 8px; }
+.app-step-desc { font-size: 14px; color: var(--t2); line-height: 1.35; margin: 0 8px; }
+.download-file-card {
+  width: 250px; height: 78px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 18px;
+}
+.download-file-icon { width: 28px; height: 34px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border); }
+.download-file-name { font-size: 14px; color: var(--t1); font-weight: 600; }
+.download-file-meta { font-size: 11px; color: var(--t3); margin-top: 4px; }
+.claude-app-icon {
+  width: 70px; height: 70px;
+  border-radius: 17px;
+  background: #df744f;
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 38px; font-weight: 700;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+}
+.app-folder-icon {
+  width: 92px; height: 70px;
+  margin-left: 26px;
+  border-radius: 12px;
+  background: #61b6e8;
+  position: relative;
+}
+.app-folder-icon::before {
+  content: '';
+  position: absolute; left: 12px; top: -11px;
+  width: 38px; height: 18px;
+  border-radius: 8px 8px 0 0;
+  background: #61b6e8;
+}
+.dock-strip {
+  display: flex; gap: 12px; align-items: center;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+}
+.dock-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--surface); display:flex;align-items:center;justify-content:center;font-size:24px; }
+.dock-icon.claude { background:#df744f;color:white;font-weight:700; }
+
 .intro-help-btn, .anno-toggle-btn {
   position: fixed; right: 16px; z-index: 250;
   width: 30px; height: 30px; border-radius: 50%;
@@ -1493,6 +1768,10 @@ body.show-annotations .anno-pin { display: inline-flex; }
   border: 1px solid var(--meta);
   white-space: nowrap; z-index: 260;
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+.anno-pin-tip-left[data-tip]:hover::after {
+  left: auto;
+  right: 0;
 }
 
 /* ── SETTINGS POINTER HINT (Customize/Settings split) ── */
@@ -1608,24 +1887,21 @@ body.show-annotations .anno-pin { display: inline-flex; }
 <div class="intro-overlay open" id="intro-overlay">
   <div class="intro-card">
     <div class="intro-title">What this prototype is</div>
-    <div class="intro-thesis">Claude chat is the engine and the products are surfaces that share the foundation of that engine.</div>
+    <div class="intro-thesis"> </div>
 
-    <div class="intro-section-label">The 3-tier IA</div>
-    <div class="intro-tier"><span class="intro-tier-num">1</span><div class="intro-tier-body"><strong>Tier 1 — the Anchor.</strong> Which surface you're in: Chat, Cowork, or Code.</div></div>
-    <div class="intro-tier"><span class="intro-tier-num">2</span><div class="intro-tier-body"><strong>Tier 2 — the sidebar.</strong> Context for that surface: chats, projects, settings.</div></div>
-    <div class="intro-tier"><span class="intro-tier-num">3</span><div class="intro-tier-body"><strong>Tier 3 — the working pane.</strong> What you're actually doing right now.</div></div>
+  <div class="intro-section-label"> </div> 
 
-    <div class="intro-section-label">Also live in this Foundation</div>
-    <div class="intro-tier-body">Two more bets are wired in here and will surface as you use it: a <strong>usage indicator</strong> near the chat input, and a <strong>project suggestion</strong> that appears in the sidebar once a few chats look related.</div>
+    <div class="intro-tier"><span class="intro-tier-num">1</span><div class="intro-tier-body"><strong>Onboarding IA.</strong> The "Try the basics" checklist at the bottom of the Chat sidebar walks a new user through importing memory, connecting tools, and getting the desktop app.</div></div>
+    <div class="intro-tier"><span class="intro-tier-num">2</span><div class="intro-tier-body"><strong>Usage limits.</strong> A usage ring next to the chat input shows plan limits at a glance, and displays best practice nudges before a user hits a wall.</div></div>
+    <div class="intro-tier"><span class="intro-tier-num">3</span><div class="intro-tier-body"><strong>Project adoption.</strong> Once a few chats look related, Claude surfaces a project suggestion in the sidebar to nudge users into Projects.</div></div>
 
     <div class="intro-section-label">Things to try</div>
     <ul class="intro-steps">
-      <li><span class="intro-step-num">1</span> Switch surfaces in the left — Chat → Cowork → Code</li>
-      <li><span class="intro-step-num">2</span> Open <strong>Projects</strong> in the Chat sidebar</li>
-      <li><span class="intro-step-num">3</span> Open a chat and look at the usage ring next to the input</li>
-      <li><span class="intro-step-num">4</span> Watch the sidebar — a project suggestion appears after a moment</li>
-      <li><span class="intro-step-num">5</span> Try the search icon to look across surfaces</li>
+      <li><span class="intro-step-num">1</span> Click an item in the <strong>Try the basics</strong> checklist, bottom of the Chat sidebar</li>
+      <li><span class="intro-step-num">2</span> Open a chat and look at the usage ring next to the input and right click to see the nudge</li>
+      <li><span class="intro-step-num">3</span> Watch the sidebar - a project suggestion appears after a moment</li>
     </ul>
+    <div class="intro-tier-body" style="margin-top:6px;">Toggle the <strong style="color:var(--meta);">violet ① button</strong> (top right) to pin labels directly on these three bets while you explore.</div>
 
     <div class="intro-actions">
       <button class="usage-nudge-btn primary" onclick="closeIntro()">Start exploring</button>
@@ -1634,6 +1910,100 @@ body.show-annotations .anno-pin { display: inline-flex; }
 </div>
 <div class="intro-help-btn" onclick="openIntro()" title="What is this?">?</div>
 <div class="anno-toggle-btn" id="anno-toggle-btn" onclick="toggleAnnotations()" title="Toggle on-screen labels">①</div>
+
+<!-- Desktop app download overlay -->
+<div class="app-download-overlay" id="app-download-overlay" onclick="if(event.target===this) closeAppDownloadOverlay()">
+  <div class="app-download-modal">
+    <div class="app-download-close" onclick="closeAppDownloadOverlay()">×</div>
+    <div class="app-download-title">Install and open the app</div>
+    <div class="app-download-sub">The desktop app should have downloaded automatically. If not, you can <span>download manually</span>.</div>
+    <div class="app-download-steps">
+      <div class="app-download-step">
+        <div class="app-step-visual">
+          <div class="download-file-card">
+            <div class="download-file-icon"></div>
+            <div>
+              <div class="download-file-name">Claude.dmg</div>
+              <div class="download-file-meta">235 MB · Done</div>
+            </div>
+          </div>
+        </div>
+        <div class="app-step-label">Step 1</div>
+        <div class="app-step-title">Open</div>
+        <div class="app-step-desc">Open the Claude.dmg file from your downloads.</div>
+      </div>
+      <div class="app-download-step">
+        <div class="app-step-visual">
+          <div class="claude-app-icon">✷</div>
+          <div class="app-folder-icon"></div>
+        </div>
+        <div class="app-step-label">Step 2</div>
+        <div class="app-step-title">Install</div>
+        <div class="app-step-desc">Drag and drop the Claude app into your Applications folder.</div>
+      </div>
+      <div class="app-download-step">
+        <div class="app-step-visual">
+          <div class="dock-strip">
+            <div class="dock-icon">💻</div>
+            <div class="dock-icon">🧭</div>
+            <div class="dock-icon claude">✷</div>
+            <div class="dock-icon">🖼</div>
+          </div>
+        </div>
+        <div class="app-step-label">Step 3</div>
+        <div class="app-step-title">Launch</div>
+        <div class="app-step-desc">Open Claude from your Applications folder or Launchpad.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Simple download confirmation modal -->
+<div class="dl-confirm-overlay" id="dl-confirm-overlay" onclick="if(event.target===this) closeDlConfirm()">
+  <div class="dl-confirm-modal">
+    <div class="dl-confirm-title">Download Claude for Mac</div>
+    <div class="dl-confirm-sub">This will download Claude.dmg to your Downloads folder. Open the file and drag Claude to your Applications folder to complete installation.</div>
+    <div class="dl-confirm-actions">
+      <button class="dl-confirm-cancel" onclick="closeDlConfirm()">Cancel</button>
+      <button class="dl-confirm-download" onclick="confirmDownload()">Download now</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import memory modal -->
+<div class="import-mem-overlay" id="import-mem-overlay" onclick="if(event.target===this) closeImportMemModal()">
+  <div class="import-mem-modal">
+    <div class="import-mem-title">Import memory to Claude</div>
+    <div class="import-mem-close" onclick="closeImportMemModal()">×</div>
+
+    <div class="import-mem-step">
+      <div class="import-mem-step-label">
+        <div class="import-mem-num">1</div>
+        <div class="import-mem-step-title">Copy this prompt into a chat with your other AI provider</div>
+      </div>
+      <div class="import-mem-prompt-box">
+        Export all of my stored memories and any context you've learned about me from past conversations. Preserve my words verbatim where possible, especially for instructions and preferences.
+        <button class="import-mem-copy-btn" onclick="copyImportPrompt(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+    </div>
+
+    <div class="import-mem-step">
+      <div class="import-mem-step-label">
+        <div class="import-mem-num">2</div>
+        <div class="import-mem-step-title">Paste results below to add to Claude's memory</div>
+      </div>
+      <textarea class="import-mem-textarea" id="import-mem-textarea" placeholder="Paste your memory details here"></textarea>
+    </div>
+
+    <div class="import-mem-actions">
+      <button class="import-mem-cancel" onclick="closeImportMemModal()">Cancel</button>
+      <button class="import-mem-submit" onclick="submitImportMem()">Add to memory</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════
      TIER 1 — PRODUCT RAIL
@@ -1653,8 +2023,6 @@ body.show-annotations .anno-pin { display: inline-flex; }
       <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
     </svg>
   </div>
-  <div class="anno-pin" data-tip="Pick the surface: Chat, Cowork, or Code"><span class="anno-pin-num">①</span> Tier 1</div>
-
   <div class="t1-btn active" data-tip="Chat" onclick="switchT1('chat')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
   </div>
@@ -1778,7 +2146,7 @@ body.show-annotations .anno-pin { display: inline-flex; }
     <!-- ── CHAT panel ── -->
     <div class="t2-panel active" id="t2-chat">
       <div class="t2-header">
-        <span class="t2-title" style="display:flex;align-items:center;gap:8px;">Chat<span class="anno-pin" data-tip="Context for the current surface"><span class="anno-pin-num">②</span> Tier 2</span></span>
+        <span class="t2-title">Chat</span>
         <div class="t2-collapse-btn" onclick="collapseT2()" title="Collapse sidebar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
         </div>
@@ -1792,7 +2160,7 @@ body.show-annotations .anno-pin { display: inline-flex; }
       <div class="t2-nav-item" id="t2nav-projects" onclick="showProjectsGrid(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
         Projects
-        <span class="anno-pin" data-tip="Project suggestion (big bet) — the blinking dot signals a pending suggestion"><span class="anno-pin-num">④</span> Suggestion</span>
+        <span class="anno-pin" data-tip="Bet 3 — Project adoption. The blinking dot signals a pending suggestion."><span class="anno-pin-num">③</span> Project adoption</span>
       </div>
       <div class="t2-nav-item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
@@ -1805,7 +2173,6 @@ body.show-annotations .anno-pin { display: inline-flex; }
           <span>Pinned</span>
         </div>
         <div class="t2-chat-item" onclick="openChat('Weekend trip ideas')">Weekend trip ideas</div>
-        <div class="t2-chat-item" onclick="openChat('Home renovation budget')">Home renovation budget</div>
 
         <!-- Recents -->
         <div class="t2-section-header" style="margin-top:6px;">
@@ -1817,21 +2184,47 @@ body.show-annotations .anno-pin { display: inline-flex; }
         <div class="t2-chat-item" onclick="openChat('Comparing cloud storage options')">Comparing cloud storage options</div>
         <div class="t2-chat-item" onclick="openChat('Book recommendations for summer')">Book recommendations for summer</div>
         <div class="t2-chat-item" onclick="openChat('Meal prep ideas for the week')">Meal prep ideas for the week</div>
-        <div class="t2-chat-item" onclick="openChat('Understanding my lease agreement')">Understanding my lease agreement</div>
         <div class="t2-chat-item" onclick="openChat('Draft email to landlord')">Draft email to landlord</div>
         <div class="t2-chat-item" onclick="openChat('Explaining machine learning basics')">Explaining machine learning basics</div>
         <div class="t2-chat-item" onclick="openChat('Planning a dinner party menu')">Planning a dinner party menu</div>
         <div class="t2-chat-item" onclick="openChat('Workout routine for beginners')">Workout routine for beginners</div>
         <div class="t2-chat-item" onclick="openChat('Side project scope and timeline')">Side project scope and timeline</div>
         <div class="t2-chat-item" onclick="openChat('Photography tips for travel')">Photography tips for travel</div>
-        <div class="t2-chat-item" onclick="openChat('Budgeting for a new laptop')">Budgeting for a new laptop</div>
         <div class="t2-chat-item" onclick="openChat('Writing a bio for LinkedIn')">Writing a bio for LinkedIn</div>
         <div class="t2-chat-item" onclick="openChat('React vs Vue for a new project')">React vs Vue for a new project</div>
       </div>
 
       <!-- ── SMART SUGGESTION (big bet) — pinned to bottom of Tier 2, queued ── -->
-      <div class="anno-pin" data-tip="Appears once related chats cluster" style="margin:0 14px 4px;"><span class="anno-pin-num">④</span> Project suggestion</div>
+      <div class="anno-pin" data-tip="Bet 3 — Project adoption. Appears once related chats cluster." style="margin:0 14px 4px;"><span class="anno-pin-num">③</span> Project adoption</div>
       <div class="proj-suggest" id="proj-suggest"></div>
+      <div class="onboard-checklist">
+        <div class="onboard-checklist-head">
+          <div class="onboard-checklist-title" style="display:flex;align-items:center;gap:8px;">Try the basics<span class="anno-pin" data-tip="Bet 1 — Onboarding IA. Click any item below to walk through it."><span class="anno-pin-num">①</span> Onboarding</span></div>
+          <div class="onboard-checklist-count">0 / 3</div>
+        </div>
+        <div class="onboard-progress"><div class="onboard-progress-fill"></div></div>
+        <div class="onboard-item" onclick="openOnboardingImportMemory()">
+          <div class="onboard-dot"></div>
+          <div>
+            <div class="onboard-item-title">Bring history from another AI</div>
+            <div class="onboard-item-desc">So you’re not starting from scratch</div>
+          </div>
+        </div>
+        <div class="onboard-item" onclick="openOnboardingConnectors()">
+          <div class="onboard-dot"></div>
+          <div>
+            <div class="onboard-item-title">Connect your everyday tools</div>
+            <div class="onboard-item-desc">Claude gives better answers when it understands what matters to you</div>
+          </div>
+        </div>
+        <div class="onboard-item" onclick="openAppDownloadOverlay()">
+          <div class="onboard-dot"></div>
+          <div>
+            <div class="onboard-item-title">Get the desktop app</div>
+            <div class="onboard-item-desc">Hand off tasks, code with Claude, and do more from your desktop</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ── SETTINGS panel ── -->
@@ -1908,6 +2301,19 @@ body.show-annotations .anno-pin { display: inline-flex; }
       </div>
       <div class="t2-settings-scroll">
 
+        <div class="t2-nav-item" onclick="switchCustomizePage('skills', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="8" height="8" rx="1"/></svg>
+          Skills
+        </div>
+        <div class="t2-nav-item" onclick="switchCustomizePage('connectors', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          Connectors
+        </div>
+        <div class="t2-nav-item" onclick="switchCustomizePage('import-memory', this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><rect x="4" y="17" width="16" height="4" rx="1"/></svg>
+          Import memory
+        </div>
+
         <div class="t2-label">Personal plugins</div>
         <div class="t2-nav-item" onclick="switchCustomizePage('plugin-brandvoice', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -1938,10 +2344,9 @@ body.show-annotations .anno-pin { display: inline-flex; }
           <span style="margin-left:auto;font-size:10px;color:var(--t3);background:var(--surface);padding:1px 6px;border-radius:3px;flex-shrink:0;">Disabled</span>
         </div>
 
-        <div class="t2-label">Browse by category</div>
         <div class="t2-nav-item" onclick="switchCustomizePage('cat-productmgmt', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          Teaching
+          Product management
         </div>
         <div class="t2-nav-item" onclick="switchCustomizePage('cat-productivity', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -1970,16 +2375,6 @@ body.show-annotations .anno-pin { display: inline-flex; }
         <div class="t2-nav-item" onclick="switchCustomizePage('cat-design', this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
           Design
-        </div>
-
-        <div class="t2-label" style="margin-top:6px;">Quick actions</div>
-        <div class="t2-nav-item" onclick="switchCustomizePage('skills', this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="8" height="8" rx="1"/></svg>
-          Skills
-        </div>
-        <div class="t2-nav-item" onclick="switchCustomizePage('connectors', this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          Connectors
         </div>
       </div>
     </div>
@@ -2114,6 +2509,12 @@ body.show-annotations .anno-pin { display: inline-flex; }
             </div>
           </div>
         </div>
+        <div class="pd-cowork-cta">
+          <button class="pd-cowork-btn" onclick="startTaskInCowork()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Start a task in Cowork
+          </button>
+        </div>
         <div class="project-detail-section-label">Chats in this project</div>
         <div class="project-detail-chatlist" id="pd-chatlist"></div>
       </div>
@@ -2125,6 +2526,8 @@ body.show-annotations .anno-pin { display: inline-flex; }
         <div class="pd-side-card">
           <div class="pd-side-card-row" onclick="openInstructionsModal(currentProjectDetail, false)">
             <div class="pd-side-card-title">Instructions</div>
+            <span class="anno-pin" data-tip="Bet 3 — Project adoption. Drafts instructions from this project's chat history."><span class="anno-pin-num">③</span> Project adoption</span>
+            <span class="pd-side-autogen" onclick="event.stopPropagation(); autoGenerateInstructions()" title="Auto-generate from chat history">Auto-generate</span>
             <span class="pd-side-card-add">+</span>
           </div>
           <div class="pd-side-card-body" id="pd-instructions-body">Add instructions to tailor Claude's responses</div>
@@ -2213,7 +2616,7 @@ body.show-annotations .anno-pin { display: inline-flex; }
             </span>
 
             <!-- ── USAGE INDICATOR (small bet) — the Claude Code pattern: ring icon → popover → arrow to Settings ── -->
-            <span class="anno-pin" data-tip="Shows plan usage limits"><span class="anno-pin-num">③</span> Usage</span>
+            <span class="anno-pin anno-pin-tip-left" data-tip="Bet 2 — Usage limits. Click the ring to see the breakdown or right click to see the nudge"><span class="anno-pin-num">②</span> Usage</span>
             <span class="usage-ring desktop-only" id="usage-ring" onclick="toggleUsagePop(event)" title="Usage">
               <svg viewBox="0 0 36 36">
                 <circle class="ring-bg" cx="18" cy="18" r="15"></circle>
@@ -2578,6 +2981,16 @@ body.show-annotations .anno-pin { display: inline-flex; }
           <div class="cust-home-sub">Skills, connectors, and plugins shape how Claude works with you.</div>
 
           <div class="cust-cards">
+            <div class="cust-card" onclick="switchCustomizePage('import-memory', null)">
+              <div class="cust-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><rect x="4" y="17" width="16" height="4" rx="1"/></svg>
+              </div>
+              <div>
+                <div class="cust-card-kicker">Import memory</div>
+                <div class="cust-card-title">Import memory from other AI providers</div>
+                <div class="cust-card-desc">Bring your saved context into Claude.</div>
+              </div>
+            </div>
             <div class="cust-card" onclick="switchCustomizePage('connectors', null)">
               <div class="cust-card-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -2605,6 +3018,44 @@ body.show-annotations .anno-pin { display: inline-flex; }
                 <div class="cust-card-desc">Add pre-built knowledge for your field.</div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- IMPORT MEMORY page -->
+      <div class="cust-page" id="cp-import-memory">
+        <div class="cust-section-header">
+          <div class="cust-back" onclick="switchCustomizePage('home', null)">← Back</div>
+          <div class="cust-section-title">Import memory</div>
+          <div class="cust-section-desc">Bring relevant context and data from another AI provider to Claude.</div>
+        </div>
+        <div class="cust-list">
+          <div class="cust-memory-box" id="view-manage-memory-row" style="display:none;" onclick="openManageMemoryModal()">
+            <div class="cust-plugin-info">
+              <div class="cust-plugin-name">View and manage memory</div>
+              <div class="cust-plugin-desc" id="view-manage-memory-updated">Updated just now</div>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0;color:var(--t3);"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div class="cust-plugin-row">
+            <div class="cust-plugin-info"><div class="cust-plugin-name">Import memory from other AI providers</div><div class="cust-plugin-desc">Bring your saved context into Claude. We'll provide a prompt you can use to fetch memory from your other account.</div></div>
+            <button class="cust-add-btn" onclick="openOnboardingImportMemory()">Start import</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANAGE MEMORY modal -->
+      <div class="import-mem-overlay" id="manage-mem-overlay" onclick="if(event.target===this) closeManageMemoryModal()">
+        <div class="import-mem-modal">
+          <div class="import-mem-title">Your memory</div>
+          <div class="import-mem-close" onclick="closeManageMemoryModal()">×</div>
+          <div class="cust-list" style="border:1px solid var(--border); border-radius:8px;">
+            <div class="cust-plugin-row" style="padding:12px 16px;"><div class="cust-plugin-info"><div class="cust-plugin-desc">Works in product management</div></div></div>
+            <div class="cust-plugin-row" style="padding:12px 16px;"><div class="cust-plugin-info"><div class="cust-plugin-desc">Prefers concise, specific answers</div></div></div>
+            <div class="cust-plugin-row" style="padding:12px 16px;"><div class="cust-plugin-info"><div class="cust-plugin-desc">Imported from another AI provider</div></div></div>
+          </div>
+          <div class="import-mem-actions">
+            <button class="import-mem-cancel" onclick="closeManageMemoryModal()">Close</button>
           </div>
         </div>
       </div>
@@ -2669,10 +3120,10 @@ body.show-annotations .anno-pin { display: inline-flex; }
             <div class="cust-plugin-info"><div class="cust-plugin-name">Slack</div><div class="cust-plugin-desc">Search messages and post to channels on your behalf.</div></div>
             <div class="cust-plugin-status enabled">Connected</div>
           </div>
-          <div class="cust-plugin-row">
+          <div class="cust-plugin-row" style="cursor:pointer" onclick="connectNotionAndComplete(this)">
             <div class="cust-plugin-icon">✅</div>
             <div class="cust-plugin-info"><div class="cust-plugin-name">Notion</div><div class="cust-plugin-desc">Read and write pages and databases in your workspace.</div></div>
-            <div class="cust-plugin-status disabled">Not connected</div>
+            <div class="cust-plugin-status disabled" id="notion-status">Not connected</div>
           </div>
           <div class="cust-plugin-row">
             <div class="cust-plugin-icon">🗄️</div>
@@ -2829,9 +3280,6 @@ function openChat(name) {
     if (i.textContent.trim() === name) i.classList.add('active');
   });
   document.querySelectorAll('#t2-chat .t2-nav-item').forEach(i => i.classList.remove('active'));
-  document.querySelectorAll('.t2-chat-item.running').forEach(i => i.classList.remove('running'));
-  // Now that the running-chat indicator is cleared, let the instructions-
-  // suggestion nav blink appear if one is still pending.
   updateProjectsNavBlink();
 
   // Update breadcrumb
@@ -2940,9 +3388,12 @@ const categoryLabels = {
 
 function switchCustomizePage(pageId, el) {
   // Deactivate all T2 customize nav items
+  document.querySelectorAll('#t2-customize .t2-nav-item').forEach(i => i.classList.remove('active'));
   if (el) {
-    document.querySelectorAll('#t2-customize .t2-nav-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
+  } else {
+    var navItem = document.querySelector('#t2-customize .t2-nav-item[onclick*="' + pageId + '"]');
+    if (navItem) navItem.classList.add('active');
   }
 
   // Hide all cust-pages
@@ -2967,6 +3418,7 @@ function switchCustomizePage(pageId, el) {
     'home': 'cp-home',
     'skills': 'cp-skills',
     'connectors': 'cp-connectors',
+    'import-memory': 'cp-import-memory',
     'cat-productmgmt': 'cp-cat-productmgmt',
     'plugin-brandvoice': 'cp-home',
     'plugin-pdfviewer': 'cp-skills',
@@ -2982,6 +3434,7 @@ function switchCustomizePage(pageId, el) {
   // Breadcrumb label
   const labelMap = {
     'home': 'Home', 'skills': 'Skills', 'connectors': 'Connectors',
+    'import-memory': 'Import memory',
     'cat-productmgmt': 'Product management',
     'plugin-brandvoice': 'Brand voice', 'plugin-pdfviewer': 'Pdf viewer',
     'plugin-enterprise': 'Enterprise s…', 'plugin-adobe': 'Adobe for cr…',
@@ -2992,6 +3445,154 @@ function switchCustomizePage(pageId, el) {
     `<span class="crumb" onclick="switchT1('customize')">Customize</span>
      <span class="sep">›</span>
      <span class="crumb current">${label}</span>`;
+}
+
+// ── ONBOARDING CHECKLIST STATE ──
+var checklistState = { history: false, tools: false, desktop: false };
+var checklistKeys = ['history', 'tools', 'desktop'];
+
+function completeOnboardingTask(key) {
+  if (checklistState[key]) return;
+  checklistState[key] = true;
+
+  var items = document.querySelectorAll('.onboard-item');
+  var idx = { history: 0, tools: 1, desktop: 2 }[key];
+  if (items[idx]) items[idx].classList.add('done');
+
+  var done = checklistKeys.filter(function(k) { return checklistState[k]; }).length;
+  var countEl = document.querySelector('.onboard-checklist-count');
+  if (countEl) countEl.textContent = done + ' / 3';
+  var fill = document.querySelector('.onboard-progress-fill');
+  if (fill) fill.style.width = Math.round((done / 3) * 100) + '%';
+
+  if (done === 3) {
+    setTimeout(function() {
+      var cl = document.querySelector('.onboard-checklist');
+      if (cl) cl.style.display = 'none';
+      showToast('Setup complete ✓');
+      // Now surface the project suggestion bet
+      setTimeout(renderSuggestion, 1800);
+    }, 600);
+  }
+}
+
+function openOnboardingImportMemory() {
+  switchT1('customize');
+  switchCustomizePage('import-memory', null);
+  document.getElementById('import-mem-textarea').value = '';
+  document.getElementById('import-mem-overlay').classList.add('open');
+}
+
+function closeImportMemModal() {
+  document.getElementById('import-mem-overlay').classList.remove('open');
+}
+
+function copyImportPrompt(btn) {
+  var text = 'Export all of my stored memories and any context you\'ve learned about me from past conversations. Preserve my words verbatim where possible, especially for instructions and preferences.';
+  navigator.clipboard.writeText(text).catch(function() {});
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied';
+  setTimeout(function() {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+  }, 1800);
+}
+
+function submitImportMem() {
+  closeImportMemModal();
+  completeOnboardingTask('history');
+  showToast('Memory updated');
+
+  var row = document.getElementById('view-manage-memory-row');
+  if (row) {
+    row.style.display = 'flex';
+    var updated = document.getElementById('view-manage-memory-updated');
+    if (updated) updated.textContent = 'Updated just now';
+  }
+}
+
+function openManageMemoryModal() {
+  document.getElementById('manage-mem-overlay').classList.add('open');
+}
+
+function closeManageMemoryModal() {
+  document.getElementById('manage-mem-overlay').classList.remove('open');
+}
+
+function openOnboardingConnectors() {
+  switchT1('customize');
+  switchCustomizePage('connectors', null);
+}
+
+function connectNotionAndComplete(row) {
+  var status = document.getElementById('notion-status');
+  if (status && status.textContent === 'Not connected') {
+    status.textContent = 'Connected';
+    status.className = 'cust-plugin-status enabled';
+    row.style.cursor = 'default';
+    row.onclick = null;
+    completeOnboardingTask('tools');
+  }
+}
+
+function openAppDownloadOverlay() {
+  // Show simple confirm modal instead of full 3-step guide
+  document.getElementById('dl-confirm-overlay').classList.add('open');
+}
+
+function closeDlConfirm() {
+  document.getElementById('dl-confirm-overlay').classList.remove('open');
+}
+
+function confirmDownload() {
+  closeDlConfirm();
+  completeOnboardingTask('desktop');
+  showToast('Downloading Claude.dmg…');
+}
+
+function closeAppDownloadOverlay() {
+  document.getElementById('app-download-overlay').classList.remove('open');
+}
+
+// ── BET 3: AUTO-GENERATE INSTRUCTIONS ──
+var autoGenDraft = 'Always respond in the context of this project. Think step by step for complex problems, show your reasoning, and use concrete examples. Prefer concise answers unless depth is requested. Flag any assumptions before proceeding.';
+
+function autoGenerateInstructions() {
+  var body = document.getElementById('pd-instructions-body');
+  if (!body) return;
+  body.innerHTML = '<div class="pd-autogen-loading">Generating from your chats…</div>';
+  setTimeout(function() {
+    body.textContent = autoGenDraft;
+    if (currentProjectDetail) {
+      projectsData[currentProjectDetail].instructions = autoGenDraft;
+    }
+    showToast('Instructions generated — click to edit');
+    body.style.cursor = 'pointer';
+    body.onclick = function() { openInstructionsModal(currentProjectDetail, false); body.onclick = null; body.style.cursor = ''; };
+  }, 850);
+}
+
+// ── BET 3: START TASK IN COWORK ──
+function startTaskInCowork() {
+  switchT1('cowork');
+  setTimeout(function() { showToast('Project context ready in Cowork'); }, 300);
+}
+
+// ── TOAST UTILITY ──
+function showToast(msg) {
+  var t = document.getElementById('proto-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'proto-toast';
+    t.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#2e2c29;border:1px solid #3a3835;color:#f5f4f1;font-size:12.5px;padding:9px 18px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;transition:opacity 0.22s,transform 0.22s;z-index:999;white-space:nowrap;pointer-events:none;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(20px)';
+  }, 2800);
 }
 
 // ── PROFILE POPOVER ──
@@ -3207,6 +3808,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     const overlay = document.getElementById('search-overlay');
     if (overlay.classList.contains('open')) closeSearch();
+    closeAppDownloadOverlay();
     closeIntro();
     closeDrawer(); closeAllInputMenus();
   }
@@ -3330,12 +3932,12 @@ document.addEventListener('click', () => closeAllInputMenus());
 // PROJECTS (big bet) — Tier 3 destination
 // ══════════════════════════════════════
 var projectsData = {
-  'Q2 finance audit': { desc: 'Reviewing and organizing this quarter\'s expense documentation', updated: 'Jun 1', chats: [], instructions: '' },
+  'Q2 finance audit': { desc: 'Reviewing and organizing this quarter\'s expense documentation', updated: 'Jun 1', chats: ['Budgeting for a new laptop', 'Home renovation budget', 'Understanding my lease agreement'], instructions: '' },
   'Apartment hunt': { desc: 'Comparing listings, budgets, and lease details while apartment hunting', updated: 'May 28', chats: [], instructions: '' }
 };
 var projectOrder = ['Q2 finance audit', 'Apartment hunt'];
 var currentProjectDetail = null;
-var pendingInstructionSuggestion = null;
+var pendingInstructionSuggestion = 'Q2 finance audit';
 var instructionSuggestions = {
   'Q2 finance audit': 'Focus on Q2 budget line items, flag any expense over $500 for review, and reference the prior quarter\'s audit notes when comparing categories.'
 };
@@ -3344,10 +3946,6 @@ var suggestQueue = [
   {
     project: 'Job search',
     chats: ['Thinking through a career decision', 'Writing a bio for LinkedIn']
-  },
-  {
-    project: 'Q2 finance audit',
-    chats: ['Budgeting for a new laptop', 'Home renovation budget', 'Understanding my lease agreement']
   },
   {
     project: 'Apartment hunt',
@@ -3375,7 +3973,7 @@ function renderProjectsGrid() {
     html +=
       '<div class="instr-suggest-banner">' +
         '<div class="instr-suggest-banner-icon"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="2.2"/><line x1="12" y1="3" x2="12" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="18" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="6" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>' +
-        '<div class="instr-suggest-banner-body">Claude noticed enough chat history in <strong>' + sName + '</strong> to suggest project instructions. <span class="anno-pin" data-tip="Project suggestion (big bet) — same suggestion engine as the sidebar dot"><span class="anno-pin-num">④</span> Suggestion</span></div>' +
+        '<div class="instr-suggest-banner-body">Claude noticed enough chat history in <strong>' + sName + '</strong> to suggest project instructions. <span class="anno-pin" data-tip="Bet 3 — Project adoption. Same suggestion engine as the sidebar dot."><span class="anno-pin-num">③</span> Project adoption</span></div>' +
         '<div class="instr-suggest-banner-actions">' +
           '<button class="usage-nudge-btn primary" onclick="reviewInstructionSuggestion()">Review</button>' +
           '<button class="usage-nudge-btn" onclick="cancelInstructionSuggestion()">Cancel</button>' +
@@ -3397,8 +3995,7 @@ function renderProjectsGrid() {
 function updateProjectsNavBlink() {
   var nav = document.getElementById('t2nav-projects');
   if (!nav) return;
-  var hasRunningChat = !!document.querySelector('.t2-chat-item.running');
-  nav.classList.toggle('has-suggestion', !!pendingInstructionSuggestion && !hasRunningChat);
+  nav.classList.toggle('has-suggestion', !!pendingInstructionSuggestion);
 }
 
 function reviewInstructionSuggestion() {
@@ -3517,15 +4114,6 @@ function removeSuggestedChat(evt) {
 function resolveSuggestion(action) {
   var s = suggestQueue.shift();
   if (action === 'accept' && s) {
-    // If the user was mid-chat when they accepted, that chat keeps running
-    // in the background — flag it in the sidebar instead of losing their place.
-    var wasInChat = document.getElementById('t3-chat').classList.contains('active');
-    var chatToMark = wasInChat ? currentChatName : null;
-
-    // Mark the running chat first so the instructions-suggestion nav blink
-    // (set inside moveChatsIntoProject) knows to hold off until it's cleared —
-    // avoids showing two competing blinking indicators at once.
-    if (chatToMark) markChatRunning(chatToMark);
     moveChatsIntoProject(s);
     openProjectDetail(s.project);
   }
@@ -3542,17 +4130,6 @@ function scheduleNextSuggestion(resolvedProject) {
     setTimeout(renderSuggestion, 2500);
   } else {
     renderSuggestion();
-  }
-}
-
-function markChatRunning(title) {
-  document.querySelectorAll('.t2-chat-item.running').forEach(function(i) { i.classList.remove('running'); });
-  var rows = document.querySelectorAll('.t2-recents .t2-chat-item');
-  for (var i = 0; i < rows.length; i++) {
-    if (rows[i].textContent.trim() === title) {
-      rows[i].classList.add('running');
-      break;
-    }
   }
 }
 
@@ -3580,7 +4157,8 @@ function moveChatsIntoProject(s) {
   renderProjectsGrid();
 }
 
-renderSuggestion();
+// renderSuggestion() is now triggered after onboarding checklist is completed
+updateProjectsNavBlink();
 </script>
 </body>
 </html>
