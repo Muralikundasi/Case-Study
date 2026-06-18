@@ -24,6 +24,7 @@
   --accent-bg: rgba(212,169,106,0.12);
   --green:     #4caf7d;
   --green-bg:  rgba(76,175,125,0.12);
+  --yellow:    #d9a23c;
   --red:       #e05252;
   --meta:      #8b7cf6;
   --meta-bg:   rgba(139,124,246,0.14);
@@ -215,7 +216,7 @@ body {
   overflow: hidden;
   flex-shrink: 0;
 }
-.t2-nav-item:hover { background: var(--surface); color: var(--t1); }
+.t2-nav-item:hover { background: var(--surface); color: var(--t1); overflow: visible; }
 .t2-nav-item.active { background: var(--surface); color: var(--t1); }
 .t2-nav-item svg { width: 14px; height: 14px; flex-shrink: 0; }
 
@@ -664,8 +665,10 @@ body {
 .s-usage-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
 .s-usage-num { font-size: 13px; font-weight: 600; white-space: nowrap; }
 .s-usage-num.red { color: var(--red); }
+.s-usage-num.yellow { color: var(--yellow); }
 .s-usage-num.blue { color: #4a90d9; }
 .s-usage-fill.red { background: var(--red); }
+.s-usage-fill.yellow { background: var(--yellow); }
 .s-usage-fill.blue { background: #4a90d9; }
 
 /* Invoice table */
@@ -1100,10 +1103,11 @@ body {
 .usage-ring svg { width: 20px; height: 20px; transform: rotate(-90deg); }
 .usage-ring .ring-bg { fill: none; stroke: var(--border2); stroke-width: 3.5; }
 .usage-ring .ring-fg {
-  fill: none; stroke: var(--red); stroke-width: 3.5;
+  fill: none; stroke: var(--yellow); stroke-width: 3.5;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.4s, stroke 0.3s;
 }
+.usage-ring .ring-fg.red { stroke: var(--red); }
 
 /* Popover anchored to the ring, opens upward */
 .usage-pop {
@@ -1142,6 +1146,7 @@ body {
 }
 .usage-pop-line > span:first-child { font-size: 12.5px; color: var(--t1); }
 .usage-pop-pct { font-size: 12.5px; font-weight: 600; }
+.usage-pop-pct.yellow { color: var(--yellow); }
 .usage-pop-pct.red { color: var(--red); }
 .usage-pop-reset { font-size: 11px; color: var(--t3); }
 .usage-pop-track {
@@ -1149,6 +1154,7 @@ body {
   border-radius: 2px; overflow: hidden;
 }
 .usage-pop-fill { height: 100%; border-radius: 2px; }
+.usage-pop-fill.yellow { background: var(--yellow); }
 .usage-pop-fill.red { background: var(--red); }
 .usage-pop-fill.blue { background: #4a90d9; }
 
@@ -1356,6 +1362,21 @@ body {
 .t2-nav-item .anno-pin { display: none; }
 body.show-annotations .t2-nav-item.has-suggestion .anno-pin { display: inline-flex; margin-left: 6px; }
 
+/* ── Connectors page: blinking dot on Notion while it's still the unchecked
+   onboarding step — the row isn't otherwise visually distinct from the
+   already-connected ones above it ── */
+.cust-plugin-row.onboard-connect-pending { position: relative; }
+.cust-plugin-row.onboard-connect-pending::before {
+  content: '';
+  position: absolute;
+  left: 6px; top: 6px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: t2-suggestion-blink 1.1s ease-in-out infinite;
+}
+body:not(.bet-1) .cust-plugin-row.onboard-connect-pending::before { display: none; }
+
 /* ── Instructions suggestion banner — top of Projects grid ── */
 .instr-suggest-banner {
   grid-column: 1 / -1;
@@ -1452,14 +1473,18 @@ body.show-annotations .t2-nav-item.has-suggestion .anno-pin { display: inline-fl
 
 /* ── Onboarding checklist + desktop download overlay ── */
 .onboard-checklist {
-  flex-shrink: 0;
-  margin: 10px 12px 12px;
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 5;
+  margin: 0 12px 12px;
   padding: 10px;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.16);
 }
+/* Onboarding spans Chat + Customize (history import & connectors live there); hidden elsewhere */
+.onboard-checklist.t2-hide-checklist { display: none !important; }
 .onboard-checklist-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .onboard-checklist-title { font-size: 11.5px; font-weight: 600; color: var(--t1); }
 .onboard-checklist-count { font-size: 10.5px; color: var(--t3); }
@@ -1724,7 +1749,7 @@ body.show-annotations .t2-nav-item.has-suggestion .anno-pin { display: inline-fl
 .dock-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--surface); display:flex;align-items:center;justify-content:center;font-size:24px; }
 .dock-icon.claude { background:#df744f;color:white;font-weight:700; }
 
-.intro-help-btn, .anno-toggle-btn {
+.intro-help-btn, .bet-pin-btn {
   position: fixed; right: 16px; z-index: 250;
   width: 30px; height: 30px; border-radius: 50%;
   background: var(--meta-bg); border: 1.5px solid var(--meta);
@@ -1733,10 +1758,13 @@ body.show-annotations .t2-nav-item.has-suggestion .anno-pin { display: inline-fl
   cursor: pointer; transition: opacity 0.15s;
   box-shadow: 0 2px 10px rgba(139,124,246,0.25);
 }
-.intro-help-btn:hover, .anno-toggle-btn:hover { opacity: 0.8; }
+.intro-help-btn:hover, .bet-pin-btn:hover { opacity: 0.8; }
 .intro-help-btn { top: 54px; }
-.anno-toggle-btn { top: 90px; font-size: 10px; }
-.anno-toggle-btn.active { background: var(--meta); color: #1a1916; }
+.bet-pin-btn { font-size: 10px; }
+#bet-pin-1 { top: 90px; }
+#bet-pin-2 { top: 126px; }
+#bet-pin-3 { top: 162px; }
+.bet-pin-btn.active { background: var(--meta); color: #1a1916; }
 
 /* ── Inline annotation pins (toggled via the ① button) — deliberately
    styled in --meta (violet), a color used nowhere else in the product,
@@ -1758,6 +1786,18 @@ body.show-annotations .t2-nav-item.has-suggestion .anno-pin { display: inline-fl
 }
 body.show-annotations .anno-pin { display: inline-flex; }
 .anno-pin-num { font-weight: 700; }
+
+/* ── Bet isolation — pin buttons ①②③ switch which single bet's UI + labels are visible ── */
+body:not(.bet-1) .onboard-checklist { display: none !important; }
+body:not(.bet-2) #usage-ring,
+body:not(.bet-2) #usage-ring-code,
+body:not(.bet-2) .usage-nudge { display: none !important; }
+body:not(.bet-3) #t2nav-projects,
+body:not(.bet-3) #proj-suggest { display: none !important; }
+
+body:not(.bet-1) .anno-pin-bet1,
+body:not(.bet-2) .anno-pin-bet2,
+body:not(.bet-3) .anno-pin-bet3 { display: none !important; }
 .anno-pin[data-tip]:hover::after {
   content: attr(data-tip);
   position: absolute;
@@ -1898,10 +1938,10 @@ body.show-annotations .anno-pin { display: inline-flex; }
     <div class="intro-section-label">Things to try</div>
     <ul class="intro-steps">
       <li><span class="intro-step-num">1</span> Click an item in the <strong>Try the basics</strong> checklist, bottom of the Chat sidebar</li>
-      <li><span class="intro-step-num">2</span> Open a chat and look at the usage ring next to the input and right click to see the nudge</li>
+      <li><span class="intro-step-num">2</span> Open a chat and look at the usage ring next to the input. It starts at 60% yellow. Right-click the ring for the demo shortcut that simulates hitting 75% and reveals the nudge</li>
       <li><span class="intro-step-num">3</span> Watch the sidebar - a project suggestion appears after a moment</li>
     </ul>
-    <div class="intro-tier-body" style="margin-top:6px;">Toggle the <strong style="color:var(--meta);">violet ① button</strong> (top right) to pin labels directly on these three bets while you explore.</div>
+    <div class="intro-tier-body" style="margin-top:6px;">Use the three <strong style="color:var(--meta);">violet pin buttons</strong> (top right, ①②③) to step through the bets one at a time — each shows that bet's UI with on-screen labels and hides the other two.</div>
 
     <div class="intro-actions">
       <button class="usage-nudge-btn primary" onclick="closeIntro()">Start exploring</button>
@@ -1909,7 +1949,9 @@ body.show-annotations .anno-pin { display: inline-flex; }
   </div>
 </div>
 <div class="intro-help-btn" onclick="openIntro()" title="What is this?">?</div>
-<div class="anno-toggle-btn" id="anno-toggle-btn" onclick="toggleAnnotations()" title="Toggle on-screen labels">①</div>
+<div class="bet-pin-btn" id="bet-pin-1" onclick="setBetMode(1)" title="Bet 1 — Onboarding IA">①</div>
+<div class="bet-pin-btn" id="bet-pin-2" onclick="setBetMode(2)" title="Bet 2 — Usage limits">②</div>
+<div class="bet-pin-btn" id="bet-pin-3" onclick="setBetMode(3)" title="Bet 3 — Project adoption">③</div>
 
 <!-- Desktop app download overlay -->
 <div class="app-download-overlay" id="app-download-overlay" onclick="if(event.target===this) closeAppDownloadOverlay()">
@@ -2160,7 +2202,7 @@ body.show-annotations .anno-pin { display: inline-flex; }
       <div class="t2-nav-item" id="t2nav-projects" onclick="showProjectsGrid(this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
         Projects
-        <span class="anno-pin" data-tip="Bet 3 — Project adoption. The blinking dot signals a pending suggestion."><span class="anno-pin-num">③</span> Project adoption</span>
+        <span class="anno-pin anno-pin-bet3" data-tip="Blinking dot signals a pending suggestion."><span class="anno-pin-num">③</span> Project adoption</span>
       </div>
       <div class="t2-nav-item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
@@ -2195,36 +2237,8 @@ body.show-annotations .anno-pin { display: inline-flex; }
       </div>
 
       <!-- ── SMART SUGGESTION (big bet) — pinned to bottom of Tier 2, queued ── -->
-      <div class="anno-pin" data-tip="Bet 3 — Project adoption. Appears once related chats cluster." style="margin:0 14px 4px;"><span class="anno-pin-num">③</span> Project adoption</div>
+      <div class="anno-pin anno-pin-bet3" data-tip="Appears once related chats are found." style="margin:0 14px 4px;"><span class="anno-pin-num">③</span> Project adoption</div>
       <div class="proj-suggest" id="proj-suggest"></div>
-      <div class="onboard-checklist">
-        <div class="onboard-checklist-head">
-          <div class="onboard-checklist-title" style="display:flex;align-items:center;gap:8px;">Try the basics<span class="anno-pin" data-tip="Bet 1 — Onboarding IA. Click any item below to walk through it."><span class="anno-pin-num">①</span> Onboarding</span></div>
-          <div class="onboard-checklist-count">0 / 3</div>
-        </div>
-        <div class="onboard-progress"><div class="onboard-progress-fill"></div></div>
-        <div class="onboard-item" onclick="openOnboardingImportMemory()">
-          <div class="onboard-dot"></div>
-          <div>
-            <div class="onboard-item-title">Bring history from another AI</div>
-            <div class="onboard-item-desc">So you’re not starting from scratch</div>
-          </div>
-        </div>
-        <div class="onboard-item" onclick="openOnboardingConnectors()">
-          <div class="onboard-dot"></div>
-          <div>
-            <div class="onboard-item-title">Connect your everyday tools</div>
-            <div class="onboard-item-desc">Claude gives better answers when it understands what matters to you</div>
-          </div>
-        </div>
-        <div class="onboard-item" onclick="openAppDownloadOverlay()">
-          <div class="onboard-dot"></div>
-          <div>
-            <div class="onboard-item-title">Get the desktop app</div>
-            <div class="onboard-item-desc">Hand off tasks, code with Claude, and do more from your desktop</div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- ── SETTINGS panel ── -->
@@ -2399,6 +2413,38 @@ body.show-annotations .anno-pin { display: inline-flex; }
     </div>
 
   </div>
+
+  <!-- ── ONBOARDING CHECKLIST (bet 1) — lives outside the T2 panels so it
+       stays visible across Chat AND Customize, since both are part of the
+       onboarding flow (history import + connectors live in Customize) ── -->
+  <div class="onboard-checklist">
+    <div class="onboard-checklist-head">
+      <div class="onboard-checklist-title" style="display:flex;align-items:center;gap:8px;">Try the basics<span class="anno-pin anno-pin-bet1" data-tip="Bet 1 — Onboarding IA. Click any item below to walk through it."><span class="anno-pin-num">①</span> Onboarding</span></div>
+      <div class="onboard-checklist-count">0 / 3</div>
+    </div>
+    <div class="onboard-progress"><div class="onboard-progress-fill"></div></div>
+    <div class="onboard-item" onclick="openOnboardingImportMemory()">
+      <div class="onboard-dot"></div>
+      <div>
+        <div class="onboard-item-title">Bring history from another AI</div>
+        <div class="onboard-item-desc">So you’re not starting from scratch</div>
+      </div>
+    </div>
+    <div class="onboard-item" onclick="openOnboardingConnectors()">
+      <div class="onboard-dot"></div>
+      <div>
+        <div class="onboard-item-title">Connect your everyday tools</div>
+        <div class="onboard-item-desc">Claude gives better answers when it understands what matters to you</div>
+      </div>
+    </div>
+    <div class="onboard-item" onclick="openAppDownloadOverlay()">
+      <div class="onboard-dot"></div>
+      <div>
+        <div class="onboard-item-title">Get the desktop app</div>
+        <div class="onboard-item-desc">Hand off tasks, code with Claude, and do more from your desktop</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Expand button (visible when T2 collapsed) -->
@@ -2526,7 +2572,7 @@ body.show-annotations .anno-pin { display: inline-flex; }
         <div class="pd-side-card">
           <div class="pd-side-card-row" onclick="openInstructionsModal(currentProjectDetail, false)">
             <div class="pd-side-card-title">Instructions</div>
-            <span class="anno-pin" data-tip="Bet 3 — Project adoption. Drafts instructions from this project's chat history."><span class="anno-pin-num">③</span> Project adoption</span>
+            <span class="anno-pin anno-pin-bet3" data-tip="Drafts project instructions from this project's chat history."><span class="anno-pin-num">③</span> Project adoption</span>
             <span class="pd-side-autogen" onclick="event.stopPropagation(); autoGenerateInstructions()" title="Auto-generate from chat history">Auto-generate</span>
             <span class="pd-side-card-add">+</span>
           </div>
@@ -2586,7 +2632,7 @@ body.show-annotations .anno-pin { display: inline-flex; }
       <div class="usage-nudge" id="usage-nudge">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
         <div class="usage-nudge-body">
-          <strong>You're at 82% of this 5-hour session.</strong> Turn on <em>code execution</em> so Claude can auto-summarise and carry this thread's context past the reset — you won't lose your place.
+          <strong id="usage-nudge-pct">You're at 60% of this 5-hour session.</strong> Turn on <em>code execution</em> so Claude can auto-summarise and carry this thread's context past to new chat.
           <div class="usage-nudge-actions">
             <button class="usage-nudge-btn primary" onclick="dismissNudge()">Enable code execution</button>
             <button class="usage-nudge-btn" onclick="dismissNudge()">Not now</button>
@@ -2616,12 +2662,12 @@ body.show-annotations .anno-pin { display: inline-flex; }
             </span>
 
             <!-- ── USAGE INDICATOR (small bet) — the Claude Code pattern: ring icon → popover → arrow to Settings ── -->
-            <span class="anno-pin anno-pin-tip-left" data-tip="Bet 2 — Usage limits. Click the ring to see the breakdown or right click to see the nudge"><span class="anno-pin-num">②</span> Usage</span>
+            <span class="anno-pin anno-pin-tip-left anno-pin-bet2" data-tip="Bet 2 — Usage limits. Left-click the ring to view usage. Right-click to see nudge"><span class="anno-pin-num">②</span> Usage</span>
             <span class="usage-ring desktop-only" id="usage-ring" onclick="toggleUsagePop(event)" title="Usage">
               <svg viewBox="0 0 36 36">
                 <circle class="ring-bg" cx="18" cy="18" r="15"></circle>
                 <circle class="ring-fg" id="ring-fg" cx="18" cy="18" r="15"
-                        stroke-dasharray="94.2" stroke-dashoffset="35.8"></circle>
+                        stroke-dasharray="94.2" stroke-dashoffset="37.68"></circle>
               </svg>
               <div class="usage-pop" id="usage-pop" onclick="event.stopPropagation()">
                 <div class="usage-pop-head">
@@ -2631,8 +2677,8 @@ body.show-annotations .anno-pin { display: inline-flex; }
                   </span>
                 </div>
                 <div class="usage-pop-row">
-                  <div class="usage-pop-line"><span>5-hour limit</span><span class="usage-pop-pct red">62%</span></div>
-                  <div class="usage-pop-track"><div class="usage-pop-fill red" style="width:62%"></div></div>
+                  <div class="usage-pop-line"><span>5-hour limit</span><span class="usage-pop-pct yellow">60%</span></div>
+                  <div class="usage-pop-track"><div class="usage-pop-fill yellow" style="width:60%"></div></div>
                 </div>
                 <div class="usage-pop-row">
                   <div class="usage-pop-line"><span>Weekly · all models</span><span class="usage-pop-reset">Resets Thu 12:00 AM · 37%</span></div>
@@ -2666,7 +2712,6 @@ body.show-annotations .anno-pin { display: inline-flex; }
         <input type="text" placeholder="Search chats…">
       </div>
       <div class="allchats-list">
-        <div class="chat-row" onclick="openChat('3-tier navigation redesign')"><span class="chat-row-name">3-tier navigation redesign</span><span class="chat-row-time">4 min ago</span></div>
         <div class="chat-row" onclick="openChat('Brainstorming session notes')"><span class="chat-row-name">Brainstorming session notes</span><span class="chat-row-time">1 hour ago</span></div>
         <div class="chat-row" onclick="openChat('Thinking through a career decision')"><span class="chat-row-name">Thinking through a career decision</span><span class="chat-row-time">2 hours ago</span></div>
         <div class="chat-row" onclick="openChat('Comparing cloud storage options')"><span class="chat-row-name">Comparing cloud storage options</span><span class="chat-row-time">6 hours ago</span></div>
@@ -2783,8 +2828,8 @@ body.show-annotations .anno-pin { display: inline-flex; }
           <div class="s-section-title">Plan usage limits <span class="s-badge accent" style="margin-left:6px;">Pro</span></div>
           <div class="s-card">
             <div class="s-usage-block">
-              <div class="s-usage-top"><div><div class="s-row-label">Current session</div><div class="s-row-desc">Starts when a message is sent</div></div><div class="s-usage-num red">100% used</div></div>
-              <div class="s-usage-bar"><div class="s-usage-fill red" style="width:100%"></div></div>
+              <div class="s-usage-top"><div><div class="s-row-label">Current session</div><div class="s-row-desc">Starts when a message is sent</div></div><div class="s-usage-num yellow" id="s-session-pct">60% used</div></div>
+              <div class="s-usage-bar"><div class="s-usage-fill yellow" id="s-session-fill" style="width:60%"></div></div>
             </div>
           </div>
         </div>
@@ -2926,7 +2971,7 @@ body.show-annotations .anno-pin { display: inline-flex; }
             <span class="usage-ring desktop-only" id="usage-ring-code" onclick="toggleUsagePop(event,'code')" title="Usage">
               <svg viewBox="0 0 36 36">
                 <circle class="ring-bg" cx="18" cy="18" r="15"></circle>
-                <circle class="ring-fg" id="ring-fg-code" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="35.8"></circle>
+                <circle class="ring-fg" id="ring-fg-code" cx="18" cy="18" r="15" stroke-dasharray="94.2" stroke-dashoffset="37.68"></circle>
               </svg>
               <div class="usage-pop" id="usage-pop-code" onclick="event.stopPropagation()">
                 <div class="usage-pop-head">
@@ -2936,8 +2981,8 @@ body.show-annotations .anno-pin { display: inline-flex; }
                   </span>
                 </div>
                 <div class="usage-pop-row">
-                  <div class="usage-pop-line"><span>5-hour limit</span><span class="usage-pop-pct red">62%</span></div>
-                  <div class="usage-pop-track"><div class="usage-pop-fill red" style="width:62%"></div></div>
+                  <div class="usage-pop-line"><span>5-hour limit</span><span class="usage-pop-pct yellow">60%</span></div>
+                  <div class="usage-pop-track"><div class="usage-pop-fill yellow" style="width:60%"></div></div>
                 </div>
                 <div class="usage-pop-row">
                   <div class="usage-pop-line"><span>Weekly · all models</span><span class="usage-pop-reset">Resets Thu 12:00 AM · 37%</span></div>
@@ -3120,7 +3165,7 @@ body.show-annotations .anno-pin { display: inline-flex; }
             <div class="cust-plugin-info"><div class="cust-plugin-name">Slack</div><div class="cust-plugin-desc">Search messages and post to channels on your behalf.</div></div>
             <div class="cust-plugin-status enabled">Connected</div>
           </div>
-          <div class="cust-plugin-row" style="cursor:pointer" onclick="connectNotionAndComplete(this)">
+          <div class="cust-plugin-row onboard-connect-pending" style="cursor:pointer" onclick="connectNotionAndComplete(this)">
             <div class="cust-plugin-icon">✅</div>
             <div class="cust-plugin-info"><div class="cust-plugin-name">Notion</div><div class="cust-plugin-desc">Read and write pages and databases in your workspace.</div></div>
             <div class="cust-plugin-status disabled" id="notion-status">Not connected</div>
@@ -3256,6 +3301,11 @@ function switchT1(mode) {
   document.querySelectorAll('.t3-view').forEach(v => v.classList.remove('active'));
   const t3View = document.getElementById('t3-' + mode);
   if (t3View) t3View.classList.add('active');
+
+  // Onboarding checklist (bet 1) persists across Chat + Customize — both are
+  // part of the onboarding flow — and hides everywhere else
+  const checklist = document.querySelector('.onboard-checklist');
+  if (checklist) checklist.classList.toggle('t2-hide-checklist', mode !== 'chat' && mode !== 'customize');
 
   // Update breadcrumb
   updateBreadcrumb(mode);
@@ -3470,8 +3520,6 @@ function completeOnboardingTask(key) {
       var cl = document.querySelector('.onboard-checklist');
       if (cl) cl.style.display = 'none';
       showToast('Setup complete ✓');
-      // Now surface the project suggestion bet
-      setTimeout(renderSuggestion, 1800);
     }, 600);
   }
 }
@@ -3529,6 +3577,7 @@ function connectNotionAndComplete(row) {
     status.className = 'cust-plugin-status enabled';
     row.style.cursor = 'default';
     row.onclick = null;
+    row.classList.remove('onboard-connect-pending');
     completeOnboardingTask('tools');
   }
 }
@@ -3820,17 +3869,36 @@ document.addEventListener('keydown', e => {
 function openIntro() { document.getElementById('intro-overlay').classList.add('open'); }
 function closeIntro() {
   document.getElementById('intro-overlay').classList.remove('open');
-  // Dismissing the overlay is the cue that a cold-open viewer needs the
-  // on-screen labels, so turn them on rather than making that a second step.
-  document.body.classList.add('show-annotations');
-  document.getElementById('anno-toggle-btn').classList.add('active');
   // Land on a real conversation (rather than the empty composer) so the
-  // usage-indicator bet is visible right away instead of needing a click.
+  // chat shell is visible right away instead of needing a click.
   openChat('Brainstorming session notes');
+  // Default to bet 1 (onboarding) so a cold-open viewer sees something
+  // annotated immediately instead of a blank shell.
+  setBetMode(1);
 }
-function toggleAnnotations() {
-  document.body.classList.toggle('show-annotations');
-  document.getElementById('anno-toggle-btn').classList.toggle('active');
+var activeBet = null;
+function setBetMode(n) {
+  document.querySelectorAll('.bet-pin-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.body.classList.remove('bet-1', 'bet-2', 'bet-3');
+  if (activeBet === n) {
+    activeBet = null;
+    document.body.classList.remove('show-annotations');
+    return;
+  }
+  activeBet = n;
+  document.body.classList.add('bet-' + n, 'show-annotations');
+  document.getElementById('bet-pin-' + n).classList.add('active');
+  // Usage limits live in the chat input — jump to a populated conversation
+  // so the ring/nudge are visible right away instead of needing a click.
+  if (n === 2) openChat(currentChatName);
+  // Each bet pin is a standalone demo — land on chat and surface the
+  // suggestion directly rather than depending on bet-1 having run first.
+  if (n === 3) {
+    openChat(currentChatName);
+    if (suggestQueue.length && !document.getElementById('proj-suggest').innerHTML.trim()) {
+      renderSuggestion();
+    }
+  }
 }
 
 // ══════════════════════════════════════
@@ -3874,7 +3942,12 @@ function toggleUsagePop(e, ctx) {
   const pop = document.getElementById(popId('usage-pop', ctx));
   const open = pop.classList.contains('open');
   closeAllInputMenus();
-  if (!open) pop.classList.add('open');
+  if (!open) {
+    pop.classList.add('open');
+    // Left-click only opens the popover at whatever state it's currently
+    // in — it no longer escalates. Escalation is right-click-only (see
+    // the contextmenu listener below).
+  }
 }
 function openUsageSettings() {
   closeAllInputMenus();
@@ -3884,17 +3957,42 @@ function openUsageSettings() {
 function dismissNudge() {
   document.getElementById('usage-nudge').classList.remove('show');
 }
-// Demo affordance: right-click either ring to preview the 82% nudge (Chat) + critical ring
+// Moves a ring + its popover from the initial yellow/60% warning state to
+// the red/critical state, and (in Chat) keeps the nudge banner's % in sync.
+// The nudge is hidden by default and only revealed once escalation happens
+// (i.e. after a right-click), so this is also what turns it on.
+function escalateUsage(ctx, dashoffset, pct) {
+  const fg = document.getElementById(ctx === 'code' ? 'ring-fg-code' : 'ring-fg');
+  if (fg) { fg.setAttribute('stroke-dashoffset', dashoffset); fg.classList.add('red'); }
+  const pop = document.getElementById(popId('usage-pop', ctx));
+  if (pop) {
+    const pctEl = pop.querySelector('.usage-pop-pct');
+    const fillEl = pop.querySelector('.usage-pop-fill');
+    if (pctEl) { pctEl.textContent = pct + '%'; pctEl.classList.remove('yellow'); pctEl.classList.add('red'); }
+    if (fillEl) { fillEl.style.width = pct + '%'; fillEl.classList.remove('yellow'); fillEl.classList.add('red'); }
+  }
+  // Keep the Settings usage screen's "Current session" number consistent
+  // with whatever the ring/popover are now showing.
+  const sessionPct = document.getElementById('s-session-pct');
+  const sessionFill = document.getElementById('s-session-fill');
+  if (sessionPct) { sessionPct.textContent = pct + '% used'; sessionPct.classList.remove('yellow'); sessionPct.classList.add('red'); }
+  if (sessionFill) { sessionFill.style.width = pct + '%'; sessionFill.classList.remove('yellow'); sessionFill.classList.add('red'); }
+  // The progressive nudge lives in Chat's input area only, and is hidden
+  // until this escalation reveals it.
+  if (ctx !== 'code') {
+    const nudge = document.getElementById('usage-nudge');
+    if (nudge) nudge.classList.add('show');
+    const nudgePct = document.getElementById('usage-nudge-pct');
+    if (nudgePct) nudgePct.textContent = "You're at " + pct + '% of this 5-hour session.';
+  }
+}
+// Demo affordance: right-click either ring to jump straight to the 75% critical state
 ['usage-ring','usage-ring-code'].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    const fg = document.getElementById(id === 'usage-ring' ? 'ring-fg' : 'ring-fg-code');
-    if (fg) fg.setAttribute('stroke-dashoffset', '17');
-    // The progressive nudge lives in Chat's input area
-    const nudge = document.getElementById('usage-nudge');
-    if (nudge) nudge.classList.add('show');
+    escalateUsage(id === 'usage-ring' ? '' : 'code', 23.55, 75);
   });
 });
 
@@ -3973,7 +4071,7 @@ function renderProjectsGrid() {
     html +=
       '<div class="instr-suggest-banner">' +
         '<div class="instr-suggest-banner-icon"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="2.2"/><line x1="12" y1="3" x2="12" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="18" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="6" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>' +
-        '<div class="instr-suggest-banner-body">Claude noticed enough chat history in <strong>' + sName + '</strong> to suggest project instructions. <span class="anno-pin" data-tip="Bet 3 — Project adoption. Same suggestion engine as the sidebar dot."><span class="anno-pin-num">③</span> Project adoption</span></div>' +
+        '<div class="instr-suggest-banner-body">Claude noticed enough chat history in <strong>' + sName + '</strong> to suggest project instructions. <span class="anno-pin anno-pin-bet3" data-tip="Bet 3 — Project adoption. Same suggestion engine as the sidebar dot."><span class="anno-pin-num">③</span> Project adoption</span></div>' +
         '<div class="instr-suggest-banner-actions">' +
           '<button class="usage-nudge-btn primary" onclick="reviewInstructionSuggestion()">Review</button>' +
           '<button class="usage-nudge-btn" onclick="cancelInstructionSuggestion()">Cancel</button>' +
@@ -4121,16 +4219,7 @@ function resolveSuggestion(action) {
 }
 
 function scheduleNextSuggestion(resolvedProject) {
-  // The "Job search" suggestion is the first flow shown in the prototype —
-  // pause a beat before surfacing the next suggestion so they don't feel
-  // like a single instant dump of every suggestion at once.
-  if (resolvedProject === 'Job search') {
-    var box = document.getElementById('proj-suggest');
-    if (box) { box.classList.add('dismissed'); box.innerHTML = ''; }
-    setTimeout(renderSuggestion, 2500);
-  } else {
-    renderSuggestion();
-  }
+  renderSuggestion();
 }
 
 function moveChatsIntoProject(s) {
@@ -4157,7 +4246,6 @@ function moveChatsIntoProject(s) {
   renderProjectsGrid();
 }
 
-// renderSuggestion() is now triggered after onboarding checklist is completed
 updateProjectsNavBlink();
 </script>
 </body>
