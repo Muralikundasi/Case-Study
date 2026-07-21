@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audience Mode — Google Docs Prototype</title>
+<style>
+  :root {
+    --blue: #1a73e8;
+    --blue-dark: #1557b0;
+    --blue-tint: #e8f0fe;
+    --ink: #202124;
+    --ink-soft: #5f6368;
+    --border: #dadce0;
+    --page-bg: #f8f9fa;
+    --doc-bg: #ffffff;
+    --amber: #b06000;
+    --amber-tint: #fef7e0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color: var(--ink);
+  }
+
+  /* Top app bar */
+  .appbar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .doc-icon {
+    width: 30px; height: 36px;
+    background: var(--blue);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 15px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .doc-title-block { line-height: 1.25; }
+  .doc-title { font-size: 15px; font-weight: 500; }
+  .doc-sub { font-size: 11px; color: var(--ink-soft); }
+
+  /* View-for toolbar */
+  .toolbar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .toolbar-label {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-weight: 600;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+  .lens-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--ink);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .lens-btn:hover { background: #f1f3f4; }
+  .lens-btn.active {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+  }
+  .lens-emoji { font-size: 14px; }
+
+  /* Page / doc canvas */
+  .page-wrap {
+    max-width: 760px;
+    margin: 32px auto 80px;
+    padding: 0 20px;
+  }
+  #doc-pane {
+    background: var(--doc-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(60,64,67,.12);
+    min-height: 420px;
+    padding: 48px 56px;
+    position: relative;
+  }
+
+  /* Source doc styling */
+  .rfc-title { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .rfc-meta { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 28px; }
+  .rfc-section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--ink-soft); margin: 26px 0 8px; }
+  .rfc-body { font-size: 14.5px; line-height: 1.75; color: #3c4043; margin: 0; }
+  .rfc-body:first-of-type { margin-top: 0; }
+
+  /* Persona banner */
+  .lens-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--blue-tint);
+    border: 1px solid #c6dafc;
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin: -12px -20px 28px;
+    font-size: 13px;
+    color: var(--blue-dark);
+  }
+  .lens-banner b { font-weight: 700; }
+  #return-to-source {
+    background: none;
+    border: none;
+    color: var(--blue);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+
+  /* VP lens */
+  .vp-title { font-size: 20px; font-weight: 600; margin: 0 0 22px; }
+  .vp-row { display: flex; gap: 14px; padding: 14px 0; border-top: 1px solid #eee; }
+  .vp-row:first-of-type { border-top: none; }
+  .vp-label { flex: 0 0 90px; font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--ink-soft); padding-top: 2px; }
+  .vp-value { flex: 1; font-size: 15px; line-height: 1.6; }
+
+  /* Designer lens */
+  .diagram-wrap { display: flex; justify-content: center; padding: 8px 0 4px; }
+
+  /* Commuter lens */
+  .player {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #f1f3f4;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .play-btn {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: var(--blue);
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .play-btn:hover { background: var(--blue-dark); }
+  .waveform { flex: 1; display: flex; align-items: center; gap: 2px; height: 30px; }
+  .bar { width: 3px; background: #9aa0a6; border-radius: 2px; transition: background .2s; }
+  .waveform.playing .bar { background: var(--blue); animation: pulse 0.9s ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { transform: scaleY(.5); }
+    50% { transform: scaleY(1); }
+  }
+  .time { font-size: 12.5px; color: var(--ink-soft); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .transcript-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--ink-soft); margin-bottom: 8px; }
+  .transcript { font-size: 15px; line-height: 1.75; color: #3c4043; }
+
+  /* Loading transition */
+  #transition-loading {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    padding: 60px 0;
+    justify-content: center;
+  }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #doc-pane.loading > *:not(#transition-loading) { display: none !important; }
+  #doc-pane.loading #transition-loading { display: flex; }
+
+  .footnote { text-align: center; font-size: 12px; color: var(--ink-soft); margin-top: 14px; }
+</style>
+</head>
+<body>
+
+  <div class="appbar">
+    <div class="doc-icon">D</div>
+    <div class="doc-title-block">
+      <div class="doc-title">Consolidating Checkout Retry Logic</div>
+      <div class="doc-sub">RFC · Payments · Owned by A. Kessler</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <span class="toolbar-label">View for</span>
+    <div id="view-for-toggle" style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="lens-btn" id="lens-vp"><span class="lens-emoji">💼</span> VP</button>
+      <button class="lens-btn" id="lens-designer"><span class="lens-emoji">🖼️</span> Designer</button>
+      <button class="lens-btn" id="lens-commuter"><span class="lens-emoji">🎧</span> Commuter</button>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div id="doc-pane"></div>
+    <div class="footnote">Prototype — lens content is pre-written, not generated live.</div>
+  </div>
+
+<script>
+(function () {
+  var docPane = document.getElementById('doc-pane');
+  var loadingEl;
+  var currentLens = null;
+  var audioTimer = null;
+  var audioElapsed = 0;
+  var audioTotal = 112; // 1:52
+
+  var lensButtons = {
+    vp: document.getElementById('lens-vp'),
+    designer: document.getElementById('lens-designer'),
+    commuter: document.getElementById('lens-commuter')
+  };
+
+  var SOURCE_HTML =
+    '<h1 class="rfc-title">RFC: Consolidating Checkout Retry Logic</h1>' +
+    '<div class="rfc-meta">Draft · Payments team · Last edited 2 days ago</div>' +
+    '<div class="rfc-section-title">Background</div>' +
+    '<p class="rfc-body">Checkout currently retries failed payment attempts using three different retry strategies depending on which team\'s code path handled the original transaction — a legacy synchronous retry in the monolith, an async retry queue in the Payments service, and a client-side retry in the mobile app. This fragmentation means failure behavior is inconsistent and none of the three paths share telemetry.</p>' +
+    '<div class="rfc-section-title">Problem</div>' +
+    '<p class="rfc-body">Inconsistent retry behavior is the #2 driver of support tickets tagged &ldquo;payment failed&rdquo; this quarter, and the lack of shared telemetry means we cannot tell how much of that is retry-logic-caused vs. genuine payment failures.</p>' +
+    '<div class="rfc-section-title">Proposed Solution</div>' +
+    '<p class="rfc-body">Consolidate all three retry paths behind a single Retry Service with one configurable backoff policy, owned by Payments, called by all three checkout surfaces.</p>' +
+    '<div class="rfc-section-title">Alternatives Considered</div>' +
+    '<p class="rfc-body">(a) Leave as-is and just add shared telemetry — rejected, doesn\'t fix the inconsistent user experience. (b) Standardize on the mobile app\'s client-side retry logic everywhere — rejected, doesn\'t work for server-initiated retries.</p>' +
+    '<div class="rfc-section-title">Rollout Plan</div>' +
+    '<p class="rfc-body">Behind a flag, monolith path first (lowest risk), then Payments async queue, then mobile client, over one quarter.</p>' +
+    '<div class="rfc-section-title">Risks</div>' +
+    '<p class="rfc-body">Retry Service becomes a new single point of failure for all checkout; needs its own SLA and on-call rotation before the mobile migration phase.</p>';
+
+  function bannerHtml(label) {
+    return '<div class="lens-banner"><span>Personalized view · <b>' + label + '</b></span>' +
+      '<button id="return-to-source">← View original doc</button></div>';
+  }
+
+  var LENS_HTML = {
+    vp: bannerHtml('Executive Summary') +
+      '<h2 class="vp-title">Consolidating Checkout Retry Logic</h2>' +
+      '<div class="vp-row"><div class="vp-label">Ask</div><div class="vp-value">Approve consolidating three inconsistent checkout retry systems into one, owned by Payments.</div></div>' +
+      '<div class="vp-row"><div class="vp-label">Why</div><div class="vp-value">This inconsistency is the #2 driver of payment-failure support tickets this quarter, and we currently can\'t measure how much of it is our own fault vs. real failures.</div></div>' +
+      '<div class="vp-row"><div class="vp-label">Cost</div><div class="vp-value">One quarter, phased rollout starting with the lowest-risk path.</div></div>' +
+      '<div class="vp-row"><div class="vp-label">Risk</div><div class="vp-value">The new unified service becomes a single point of failure and needs its own on-call before the final (mobile) migration phase.</div></div>',
+
+    designer: bannerHtml('Visual Diagram') +
+      '<div class="diagram-wrap">' + diagramSVG() + '</div>',
+
+    commuter: bannerHtml('Narrated Audio') +
+      '<div class="player">' +
+        '<button class="play-btn" id="audio-play">▶</button>' +
+        '<div class="waveform" id="waveform">' + waveformBars() + '</div>' +
+        '<div class="time" id="audio-time">0:00 / 1:52</div>' +
+      '</div>' +
+      '<div class="transcript-label">Transcript</div>' +
+      '<p class="transcript">&ldquo;Quick one — we\'re fixing checkout retries. Right now if your payment fails, three different parts of the app each retry it their own way, and none of them talk to each other. That\'s actually our second-biggest source of payment complaints. The fix is boring but good: one retry system, owned by the Payments team, rolled out safely over a quarter, monolith first. Only real risk is it becomes a single point of failure, so it needs its own on-call before we flip mobile over. That\'s it.&rdquo;</p>'
+  };
+
+  function waveformBars() {
+    var bars = '';
+    var heights = [8,14,22,12,26,18,10,24,16,20,9,28,14,22,12,18,26,10,20,16,24,12,8,18,22,14,10,26,20,16];
+    for (var i = 0; i < heights.length; i++) {
+      var delay = (i * 0.05).toFixed(2);
+      bars += '<div class="bar" style="height:' + heights[i] + 'px; animation-delay:' + delay + 's;"></div>';
+    }
+    return bars;
+  }
+
+  function diagramSVG() {
+    return '<svg width="560" height="270" viewBox="0 0 560 270" xmlns="http://www.w3.org/2000/svg">' +
+      '<style>' +
+        '.box{fill:#fff;stroke:#dadce0;stroke-width:1.5;rx:8;}' +
+        '.box-hub{fill:#e8f0fe;stroke:#1a73e8;stroke-width:1.5;rx:8;}' +
+        '.lbl{font-family:-apple-system,Roboto,Arial,sans-serif;font-size:12px;fill:#202124;}' +
+        '.lbl-hub{font-family:-apple-system,Roboto,Arial,sans-serif;font-size:13px;fill:#1557b0;font-weight:700;}' +
+        '.small{font-family:-apple-system,Roboto,Arial,sans-serif;font-size:10.5px;fill:#5f6368;}' +
+        '.arrow{stroke:#9aa0a6;stroke-width:1.5;fill:none;marker-end:url(#arrowhead);}' +
+      '</style>' +
+      '<defs><marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#9aa0a6"/></marker></defs>' +
+
+      '<rect class="box" x="10" y="10" width="150" height="52"/>' +
+      '<text class="lbl" x="85" y="32" text-anchor="middle">Monolith</text>' +
+      '<text class="lbl" x="85" y="48" text-anchor="middle">retry</text>' +
+
+      '<rect class="box" x="205" y="10" width="150" height="52"/>' +
+      '<text class="lbl" x="280" y="32" text-anchor="middle">Payments queue</text>' +
+      '<text class="lbl" x="280" y="48" text-anchor="middle">retry</text>' +
+
+      '<rect class="box" x="400" y="10" width="150" height="52"/>' +
+      '<text class="lbl" x="475" y="32" text-anchor="middle">Mobile client</text>' +
+      '<text class="lbl" x="475" y="48" text-anchor="middle">retry</text>' +
+
+      '<path class="arrow" d="M85,62 C85,90 210,90 250,108"/>' +
+      '<path class="arrow" d="M280,62 L280,108"/>' +
+      '<path class="arrow" d="M475,62 C475,90 350,90 310,108"/>' +
+
+      '<rect class="box-hub" x="170" y="110" width="220" height="56"/>' +
+      '<text class="lbl-hub" x="280" y="134" text-anchor="middle">Retry Service</text>' +
+      '<text class="small" x="280" y="152" text-anchor="middle">single backoff policy</text>' +
+
+      '<text class="small" x="280" y="196" text-anchor="middle">phased rollout — one quarter</text>' +
+      '<rect class="box" x="20" y="210" width="130" height="36"/>' +
+      '<text class="lbl" x="85" y="233" text-anchor="middle">1. Monolith</text>' +
+      '<path class="arrow" d="M150,228 L205,228"/>' +
+      '<rect class="box" x="210" y="210" width="150" height="36"/>' +
+      '<text class="lbl" x="285" y="233" text-anchor="middle">2. Payments queue</text>' +
+      '<path class="arrow" d="M360,228 L415,228"/>' +
+      '<rect class="box" x="420" y="210" width="130" height="36"/>' +
+      '<text class="lbl" x="485" y="233" text-anchor="middle">3. Mobile</text>' +
+      '</svg>';
+  }
+
+  function showLens(key) {
+    if (currentLens === key) return;
+    stopAudio();
+    docPane.classList.add('loading');
+    docPane.innerHTML = '<div id="transition-loading"><div class="spinner"></div><span>Personalizing for ' + labelFor(key) + '…</span></div>';
+    setTimeout(function () {
+      currentLens = key;
+      docPane.classList.remove('loading');
+      docPane.innerHTML = LENS_HTML[key];
+      setActiveButton(key);
+      var back = document.getElementById('return-to-source');
+      if (back) back.addEventListener('click', showSource);
+      if (key === 'commuter') wireAudioPlayer();
+    }, 600);
+  }
+
+  function labelFor(key) {
+    return key === 'vp' ? 'VP' : key === 'designer' ? 'Designer' : 'Commuter';
+  }
+
+  function showSource() {
+    stopAudio();
+    currentLens = null;
+    docPane.innerHTML = SOURCE_HTML;
+    setActiveButton(null);
+  }
+
+  function setActiveButton(key) {
+    Object.keys(lensButtons).forEach(function (k) {
+      lensButtons[k].classList.toggle('active', k === key);
+    });
+  }
+
+  function wireAudioPlayer() {
+    audioElapsed = 0;
+    var playBtn = document.getElementById('audio-play');
+    var timeEl = document.getElementById('audio-time');
+    var waveform = document.getElementById('waveform');
+    playBtn.addEventListener('click', function () {
+      if (audioTimer) {
+        stopAudio();
+      } else {
+        playBtn.textContent = '⏸';
+        waveform.classList.add('playing');
+        audioTimer = setInterval(function () {
+          audioElapsed++;
+          if (audioElapsed >= audioTotal) {
+            stopAudio();
+            return;
+          }
+          timeEl.textContent = formatTime(audioElapsed) + ' / ' + formatTime(audioTotal);
+        }, 1000);
+      }
+    });
+  }
+
+  function stopAudio() {
+    if (audioTimer) {
+      clearInterval(audioTimer);
+      audioTimer = null;
+    }
+    audioElapsed = 0;
+    var playBtn = document.getElementById('audio-play');
+    var timeEl = document.getElementById('audio-time');
+    var waveform = document.getElementById('waveform');
+    if (playBtn) playBtn.textContent = '▶';
+    if (waveform) waveform.classList.remove('playing');
+    if (timeEl) timeEl.textContent = '0:00 / ' + formatTime(audioTotal);
+  }
+
+  function formatTime(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function init() {
+    docPane.innerHTML = SOURCE_HTML;
+    lensButtons.vp.addEventListener('click', function () { showLens('vp'); });
+    lensButtons.designer.addEventListener('click', function () { showLens('designer'); });
+    lensButtons.commuter.addEventListener('click', function () { showLens('commuter'); });
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>
